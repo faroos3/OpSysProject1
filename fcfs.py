@@ -40,10 +40,6 @@ class Process(object):
 		self.cpu_t = cpu_t
 		self.num_bursts = num_bursts
 		self.io_t = io_t
-		
-		##Start and End times of CPU burst
-		self.cpu_start = 0
-		self.cpu_end = 0
 
 	def get_process_id(self):
 		return self.process_id
@@ -60,13 +56,9 @@ class Process(object):
 	def get_io_t(self):
 		return self.io_t
 
-	#Start time of cpu burst
-	def set_cpu_start(self,start_t):
-		self.cpu_start = start_t
-
-	#End time of cpu burst
-	def set_cpu_start(self,end_t):
-		self.cpu_end = end_t
+	##Decrease number of bursts by 1
+	def burst_complete(self):
+		self.num_bursts -= 1
 
 	def __str__(self):
 		return self.process_id
@@ -87,7 +79,6 @@ class CPU_Burst(object):
 		##Process in queue is finished, set queue to idle
 		if(self.total_time == (self.start_t + self.process_running.get_cpu_t())):
 			print('Process: {} Start Time: {} Total Time: {}'.format(self.process_running, self.start_t, self.total_time))
-			self.process_running = None
 			return True
 		return False
 
@@ -96,6 +87,11 @@ class CPU_Burst(object):
 		self.process_running = process
 		self.start_t = start_t
 
+	def get_current_cpu_process(self):
+		return self.process_running
+
+
+
 def fcfs(process_list):
 	t_cs = 8
 	##Time
@@ -103,7 +99,7 @@ def fcfs(process_list):
 	ready_queue = Queue()
 	##Nothing on CPU to begin with
 	cpu = CPU_Burst()
-	while(i<5000):
+	while(i<20000):
 		for j in process_list:
 			##If new process arrives, add to queue
 			if(i == j.get_arrival_t()):
@@ -111,7 +107,14 @@ def fcfs(process_list):
 		##If CPU is ready for new process take first one from queue
 		if(cpu.ready(i)):
 			if(ready_queue.isEmpty() == False):
-				cpu.set_cpu(ready_queue.dequeue(),i)
+				##put process running in cpu back on queue (if it exists)
+				current_process = cpu.get_current_cpu_process()
+				if(current_process != None):
+					if(current_process.get_num_bursts() > 0):
+						ready_queue.enqueue(current_process)
+				new_process = ready_queue.dequeue()
+				cpu.set_cpu(new_process,i)
+				new_process.burst_complete()
 		i+=1
 
 
