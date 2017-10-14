@@ -104,16 +104,20 @@ def fcfs(process_list):
 			##If new process arrives, add to queue
 			if(i == j.get_arrival_t()):
 				ready_queue.enqueue(j)
-		##If CPU is ready for new process take first one from queue
+		##If CPU is ready to accept a process
 		if(cpu.ready(i)):
-			if(ready_queue.isEmpty() == False):
-				##put process running in cpu back on queue (if it exists)
-				current_process = cpu.get_current_cpu_process()
-				if(current_process != None):
-					if(current_process.get_num_bursts() > 0):
+			##Get current process running in CPU (if it exists)
+			current_process = cpu.get_current_cpu_process()
+			if(current_process != None):
+				##If the process has remaining CPU bursts, add it to the back of the queue
+				if(current_process.get_num_bursts() > 0):
 						ready_queue.enqueue(current_process)
+			if(ready_queue.isEmpty() == False):
+				##Get the first process on the queue
 				new_process = ready_queue.dequeue()
+				##Put it into the CPU
 				cpu.set_cpu(new_process,i)
+				##Decriment number of bursts remaining for process
 				new_process.burst_complete()
 		i+=1
 
