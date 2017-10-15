@@ -28,6 +28,7 @@ RR PC:
 	i = 0
 	j = 0 
 	all_done = False # boolean flag to see if we're done w/ all processes. 
+	cs_flag = False # context switch flag. if it happens, then don't i+=1.
 	current_process_i = 0 
 	active_process = None # this is if there is an active process running. 
 	cpu = CPU_Burst() # might not use this. will try not to. 
@@ -40,6 +41,7 @@ RR PC:
 	
 	# start the timer. 
 	while i < 50000: # arbitrarily big ms number. 
+		cs_flag = False # should be false to start. 
 		for process in process_list:
 			if(i == process.get_arrival_t()):
 				q.enqueue(process)
@@ -61,7 +63,7 @@ RR PC:
 			io_list[current_process_i] = (0, False)
 			if(remaining_burst_times[current_process_i] < 0): # means it's not from a previous thing 
 				remaining_burst_times[current_process_i] = active_process.get_cpu_t()
-				
+			i += cs_time # should be all good for context switches. Don't think flag is needed. 
 			
 			
 			print Process whatever started using the CPU (print q)
@@ -73,6 +75,7 @@ RR PC:
 			q.enqueue(active_process)
 			# I don't think I need to set active_process to anything since above handles it.
 			active_process = None 
+			
 		elif remaining_burst_times[current_process_i] == 0: #don't preempt, done. 
 			t_action = 0 
 			active_process.burst_complete()
