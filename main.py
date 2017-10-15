@@ -39,4 +39,5 @@ if __name__ == '__main__':
 	if go_through_with_program: 
 		list_of_processes = get_instructions(sys.argv[1])
 		print(list_of_processes)
+		rr(list_of_processes)
 		
