@@ -8,7 +8,7 @@
 ##	 |									  |
 ##   --------------------------------------
 
-##Queue, FIFO
+#Queue, FIFO
 class Queue(object):
 	##create new queue
 	def __init__(self):
@@ -20,7 +20,6 @@ class Queue(object):
 
 	##dequeue remove front
 	def dequeue(self):
-		# print(self.items[0])
 		return self.items.pop(0)
 
 	##isEmpty
@@ -31,7 +30,7 @@ class Queue(object):
 	def size(self):
 		return len(self.items)
 
-##Contains info for each process
+#Contains info for each process
 class Process(object):
 
 	def __init__(self,process_id,arrival_t,cpu_t,num_bursts,io_t):
@@ -40,6 +39,7 @@ class Process(object):
 		self.cpu_t = cpu_t
 		self.num_bursts = num_bursts
 		self.io_t = io_t
+		self.wait_time = 0
 
 	def get_process_id(self):
 		return self.process_id
@@ -56,14 +56,18 @@ class Process(object):
 	def get_io_t(self):
 		return self.io_t
 
-	##Decrease number of bursts by 1
+	# Decrease number of bursts by 1
 	def burst_complete(self):
 		self.num_bursts -= 1
+
+	# Compare processes based on CPU burst time
+	def __cmp__(self, other):
+		return cmp(self.get_cpu_t(), other.get_cpu_t())
 
 	def __str__(self):
 		return self.process_id
 
-##Keeps track of processes in CPU burst
+#Keeps track of processes in CPU burst
 class CPU_Burst(object):
 	def __init__(self):
 		self.process_running = None
@@ -73,10 +77,10 @@ class CPU_Burst(object):
 	##Time t
 	def ready(self,t):
 		self.total_time += 1
-		##No process in cpu
+		# No process in cpu
 		if(self.process_running == None):
 			return True
-		##Process in queue is finished, set queue to idle
+		# Process in queue is finished, set queue to idle
 		if(self.total_time == (self.start_t + self.process_running.get_cpu_t())):
 			print('Process: {} Start Time: {} Total Time: {}'.format(self.process_running, self.start_t, self.total_time))
 			return True
@@ -89,7 +93,6 @@ class CPU_Burst(object):
 
 	def get_current_cpu_process(self):
 		return self.process_running
-
 
 
 def fcfs(process_list):
