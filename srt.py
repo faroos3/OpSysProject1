@@ -2,6 +2,7 @@ from fcfs import Process
 from fcfs import CPU_Burst
 import Queue as Q
 
+# Format the queue for output
 def format_queue(queue):
 	output = "[Q"
 	if queue.qsize() == 0:
@@ -14,18 +15,24 @@ def format_queue(queue):
 				output += " " + str(queue.queue[i])
 	return output
 
+''' While processes are in the queue, increase their wait time'''
+def increase_wait_time(queue):
+	for i in range(queue.qsize()):
+		queue.queue[i].increase_wait_time()
+
 
 def SRT(process_list):
 	
-	time = 0 # measured in ms
-	cpu = CPU_Burst()
+	t = 0    # time in ms
+	t_cs = 8 # time to perform context switch
+	ready = True
+	IOList = {}
 	ready_queue = Q.PriorityQueue()
-	current_process = cpu.get_current_cpu_process()
+	current_process = None
+	start_time = 0
 
-	while(time < 20000):
-
-		if time == 0:
-			print("time {}ms: Simulator started for SRT [Q <empty>]".format(0))
+	print("time 0ms: Simulator started for SRT [Q <empty>]")
+	while(t < 20000):
 
 		'''
 		Check if a a processed arrived,then check for preemption
@@ -33,39 +40,40 @@ def SRT(process_list):
 		'''
 		for process in process_list:
 
-			if(time == process.get_arrival_t()):
+			if(t == process.get_arrival_t()):
 
-				if(cpu.ready(time) == False and current_process != None):
+				# Preemption
+				if(ready == False and current_process != None):
 					if (process < current_process):
-						cpu.set_cpu(process,time)
 						ready_queue.put(current_process)
-						print("time {}ms: Process {} arrived and will preempt {} {}".format(time,process,w_process,format_queue(ready_queue)))
+						print("time {}ms: Process {} arrived and will preempt {} {}".format(t,process,w_process,format_queue(ready_queue)))
 
-				else:	
+				# Add the process to the queue
+				if ready == True and current_process == None:
 					ready_queue.put(process)
-					print("time {}ms: Process {} arrived and added to the ready queue {}".format(time,process,format_queue(ready_queue)))
+					ready = False
+					print("time {}ms: Process {} arrived and added to the ready queue {}".format(t,process,format_queue(ready_queue)))
 
-		# Check if CPU is ready to accept a process (ready state)
-		if(cpu.ready(time)):
-			
-			# Get current process running in CPU (if it exists)
-			current_process = cpu.get_current_cpu_process()
-			if(current_process != None):
+		# Starting process
+		current_process = ready_queue.get(process)
+		if ready == False:
+			start_time = t
 
-				# If the process has remaining CPU bursts, add it to the back of the queue
-				if(current_process.get_num_bursts() > 0):
-						ready_queue.put(current_process)
+		'''
+		If the current process has finised it's burst
+		add it to the IO List and set the CPU up to take a new process
+		'''
+		if (t - start_time) == current_process.get_cpu_t():
+			current_process.burst_complete() # Decrement the number of bursts
+			IO_List.append({time,current_process}) 
+			current_process = None 
+			ready = True
+			print("time {}ms: Process {} arrived and added to the ready queue {}".format(t,process,format_queue(ready_queue)))
 
-			if(ready_queue.empty() == False):
-				
-				# Get the first process on the queue, put it into the CPU
-				new_process = ready_queue.get()
-				cpu.set_cpu(new_process,time)
-
-				# Decriment number of bursts remaining for process
-				new_process.burst_complete()
-
-		time+=1
+		# Exit when all processes are complete (No mory CPU Bursts or IO Operations)
+		if ready_queue.qsize():
+			break
+		t+=1
 	return True 
 
 if __name__ == '__main__':
