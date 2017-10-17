@@ -55,6 +55,9 @@ class Process(object):
 
 	def get_io_t(self):
 		return self.io_t
+	
+	def increase_wait_time(self): 
+		self.wait_time +=1 
 
 	# Decrease number of bursts by 1
 	def burst_complete(self):
@@ -66,6 +69,7 @@ class Process(object):
 
 	def __str__(self):
 		return self.process_id
+		
 
 #Keeps track of processes in CPU burst
 class CPU_Burst(object):

@@ -14,6 +14,8 @@ Notes:
 	-Question - calling burst_complete() should change it in the 
 		master list right? Yeah it will, adding it back later.
 	- might need to make an equals operator for Process so i can .index()
+	- add a member variable to John's thing called wait time 
+	-- go through each process and check to see if it's the active process. Go through the I/O adjacency list. if it's not there, and it's not the active process, and i is greater than arrival time, then up wait time by 1. 
 RR PC: 
 	real_process_list = [] # going to use the Process class S/O John 
 	for process in process_list: 
@@ -61,10 +63,10 @@ RR PC:
 					break 
 			# above loop should always return the index, need it for remaining_burst_times list 
 			io_list[current_process_i] = (0, False)
-			if(remaining_burst_times[current_process_i] < 0): # means it's not from a previous thing 
+			if(remaining_burst_times[current_process_i] <= 0): # means it's not from a previous thing 
 				remaining_burst_times[current_process_i] = active_process.get_cpu_t()
-			i += cs_time # should be all good for context switches. Don't think flag is needed. 
-			
+			i += cs_time # should be all good for context switches. Don't think flag is needed. Actually don't think this is needed. 
+			cs_flag = True
 			
 			print Process whatever started using the CPU (print q)
 			
@@ -79,7 +81,7 @@ RR PC:
 		elif remaining_burst_times[current_process_i] == 0: #don't preempt, done. 
 			t_action = 0 
 			active_process.burst_complete()
-			if (active_process.burst_complete() == 0):
+			if (active_process.get_num_bursts() == 0):
 				print process id terminated print q 
 				active_process =None 
 				break 
@@ -95,6 +97,7 @@ RR PC:
 			if item[0] == i: 
 				print Process id completed IO. added to ready queue print q 
 				q.enqueue(item[1])
+				item = (0,false) 
 		# 
 		if(q is empty): 
 			for each process in real process_list: 
@@ -109,7 +112,7 @@ RR PC:
 		i +=1 
 		t_action +=1 
 		remaining_burst_times[current_process_i] -=1
-			
+		
 '''
 
 def rr(process_list):
