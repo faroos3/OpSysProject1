@@ -63,10 +63,6 @@ class Process(object):
 	def burst_complete(self):
 		self.num_bursts -= 1
 
-	# Compare processes based on CPU burst time
-	def __cmp__(self, other):
-		return cmp(self.get_cpu_t(), other.get_cpu_t())
-
 	def __str__(self):
 		return self.process_id
 		

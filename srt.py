@@ -1,80 +1,105 @@
 from fcfs import Process
 from fcfs import CPU_Burst
-import Queue as Q
+import heapq
 
 # Format the queue for output
 def format_queue(queue):
 	output = "[Q"
-	if queue.qsize() == 0:
+	if len(queue) == 0:
 		output += " <empty>]"
 	else:
-		for i in range(queue.qsize()):
-			if i == (queue.qsize() - 1):
-				output += " " + str(queue.queue[i]) + "]"
+		for i in range(len(queue)):
+			if i == (len(queue) - 1):
+				output += " " + str(queue[i][1]) + "]"
 			else:
-				output += " " + str(queue.queue[i])
+				output += " " + str(queue[i][1])
 	return output
 
-''' While processes are in the queue, increase their wait time'''
+
+# While processes are in the queue, increase their wait time
 def increase_wait_time(queue):
-	for i in range(queue.qsize()):
-		queue.queue[i].increase_wait_time()
+	for i in range(len(queue)):
+		queue[i].increase_wait_time()
 
 
-def SRT(process_list):
-	
-	t = 0    # time in ms
-	t_cs = 8 # time to perform context switch
+def SRT(process_list):	
+	t = 0    						# time in ms
+	t_cs = 8 						# time to perform context switch
+	IO_list = {} 					# {time process's IO will finish, process}
 	ready = True
-	IOList = {}
-	ready_queue = Q.PriorityQueue()
+	ready_queue = [] 				# heapq, [ [cpu burst time, process] ]
+	burst_end_time = 0 				# time the current process will finish it's burst
 	current_process = None
-	start_time = 0
+	completed_processes = []
 
 	print("time 0ms: Simulator started for SRT [Q <empty>]")
 	while(t < 20000):
 
 		'''
-		Check if a a processed arrived,then check for preemption
+		Check if a a processed arrived, then check for preemption
 		or add it to the queue
 		'''
 		for process in process_list:
 
+			# Check if the process arrived
 			if(t == process.get_arrival_t()):
 
 				# Preemption
 				if(ready == False and current_process != None):
-					if (process < current_process):
-						ready_queue.put(current_process)
+
+					# Check if the current process's remaining time is more than the arriving process
+					if process.get_cpu_t() < (burst_end_time - current_process.get_cpu_t()):
+						heapq.heappush(ready_queue,[current_process.get_cpu_t(), current_process])
 						print("time {}ms: Process {} arrived and will preempt {} {}".format(t,process,w_process,format_queue(ready_queue)))
+						t += t_cs # Account for context switch
 
 				# Add the process to the queue
 				if ready == True and current_process == None:
-					ready_queue.put(process)
+					heapq.heappush(ready_queue,[process.get_cpu_t(),process])
 					ready = False
 					print("time {}ms: Process {} arrived and added to the ready queue {}".format(t,process,format_queue(ready_queue)))
 
 		# Starting process
-		current_process = ready_queue.get(process)
-		if ready == False:
-			start_time = t
+		current_process = heapq.heappop(ready_queue)[1]
+		if ready == False and current_process != None:
+			burst_end_time = t + current_process.get_cpu_t()
 
 		'''
 		If the current process has finised it's burst
 		add it to the IO List and set the CPU up to take a new process
 		'''
-		if (t - start_time) == current_process.get_cpu_t():
+		if ready == False and current_process != None and (burst_end_time - t) == current_process.get_cpu_t():
 			current_process.burst_complete() # Decrement the number of bursts
-			IO_List.append({time,current_process}) 
+			IO_list[t+current_process.get_io_t()] = current_process 
+			print("time {}ms: Process {} completed a CPU burst; {} burst to go {}".format(t,process,process.get_num_bursts(),format_queue(ready_queue)))
+			print("time {}ms: Process {} switching out of CPU; will block on I/O until time {}ms {}".format(t,process,current_process.get_io_t(),
+				format_queue(ready_queue)))
 			current_process = None 
 			ready = True
-			print("time {}ms: Process {} arrived and added to the ready queue {}".format(t,process,format_queue(ready_queue)))
+
+		'''
+		Check if a processes finished their IO, if it has check if
+		any bursts are left, if so add it to the queue, if not mark
+		it as finished
+		'''
+		for key in IO_list:
+			if key == t:
+				print("time {}ms: Process {} completed I/O; added to ready queue [Q C]{}".format(t,process,format_queue(ready_queue)))
+				if IO_list[key].get_num_bursts() == 0:
+					print("time {}ms: Process {} terminated {}".format(t,process,format_queue(ready_queue)))
+					completed_processes.append(process)
+				else:
+					ready_queue.append(IO_list[key])
+
+		# Increase the wait time of all processes in the queue
+		increase_wait_time(ready_queue)
 
 		# Exit when all processes are complete (No mory CPU Bursts or IO Operations)
-		if ready_queue.qsize():
+		if len(ready_queue) == 0 and len(IO_list) < 0:
 			break
+
 		t+=1
-	return True 
+	return completed_processes 
 
 if __name__ == '__main__':
 	
@@ -85,10 +110,7 @@ if __name__ == '__main__':
 		Process('C',190,97,5,2499), 
 		Process('D',250,1770,2,822)
 	])
-
-	# Number of processes to simulate
-	n = 0
-
+	
 	SRT(process_list)
 
 
