@@ -18,51 +18,52 @@ def format_queue(queue):
 
 # While processes are in the queue, increase their wait time
 def increase_wait_time(queue):
-	for i in range(len(queue)):
-		queue[i].increase_wait_time()
+	for process in queue:
+		process[1].increase_wait_time()
 
 
 def SRT(process_list):	
-	t = 0    						# time in ms
-	t_cs = 8 						# time to perform context switch
-	IO_list = {} 					# {time process's IO will finish, process}
-	ready = True
-	ready_queue = [] 				# heapq, [ [cpu burst time, process] ]
-	burst_end_time = 0 				# time the current process will finish it's burst
+	t = 0    				# time in ms
+	t_cs = 8 				# time to perform context switch
+	IO_list = {} 			# { {time process's IO will finish : process} }
+	ready = True			# CPU state
+	ready_queue = []		# heapq, [ [process cpu burst time, process] ]
+	burst_end_time = 0 		# time the current process will finish it's burst
 	current_process = None
 	completed_processes = []
 
 	print("time 0ms: Simulator started for SRT [Q <empty>]")
-	while(t < 20000):
-
+	while(t < 50000):
+		
 		'''
 		Check if a a processed arrived, then check for preemption
 		or add it to the queue
 		'''
+		# Arrival Check
 		for process in process_list:
-
-			# Check if the process arrived
 			if(t == process.get_arrival_t()):
+				heapq.heappush(ready_queue,[process.get_cpu_t(),process])
+				print("time {}ms: Process {} arrived and added to the ready queue {}".format(t,process,format_queue(ready_queue)))
 
-				# Preemption
-				if(ready == False and current_process != None):
+		# Start a process if the CPU is open
+		if(ready == False and current_process != None):
+			ready = True
+			current_process = heapq.heappop(ready_queue)[1]
+			burst_end_time = t+current_process.get_cpu_t()
+			print("time {}ms: Process {} started using the CPU {}".format(t,process,format_queue(ready_queue)))
 
-					# Check if the current process's remaining time is more than the arriving process
-					if process.get_cpu_t() < (burst_end_time - current_process.get_cpu_t()):
-						heapq.heappush(ready_queue,[current_process.get_cpu_t(), current_process])
-						print("time {}ms: Process {} arrived and will preempt {} {}".format(t,process,w_process,format_queue(ready_queue)))
-						t += t_cs # Account for context switch
+		# Preemption Check
+		for process in ready_queue:
 
-				# Add the process to the queue
-				if ready == True and current_process == None:
-					heapq.heappush(ready_queue,[process.get_cpu_t(),process])
-					ready = False
-					print("time {}ms: Process {} arrived and added to the ready queue {}".format(t,process,format_queue(ready_queue)))
+			# If the current process's remaining time is more than a queued process, 
+			if process[1].get_cpu_t() < (burst_end_time - t):
 
-		# Starting process
-		current_process = heapq.heappop(ready_queue)[1]
-		if ready == False and current_process != None:
-			burst_end_time = t + current_process.get_cpu_t()
+				# Add the current process to the queue with it's remaining time
+				heapq.heappush(ready_queue,[burst_end_time - t, current_process])
+				print("time {}ms: Process {} arrived and will preempt {} {}".format(t,process,current_process,format_queue(ready_queue)))
+				current_process = heapq.heappop(ready_queue)[1]
+				t += t_cs # Account for context switch
+				burst_end_time = t+current_process.get_cpu_t()
 
 		'''
 		If the current process has finised it's burst
@@ -84,7 +85,7 @@ def SRT(process_list):
 		'''
 		for key in IO_list:
 			if key == t:
-				print("time {}ms: Process {} completed I/O; added to ready queue [Q C]{}".format(t,process,format_queue(ready_queue)))
+				print("time {}ms: Process {} completed I/O; added to ready queue {}".format(t,process,format_queue(ready_queue)))
 				if IO_list[key].get_num_bursts() == 0:
 					print("time {}ms: Process {} terminated {}".format(t,process,format_queue(ready_queue)))
 					completed_processes.append(process)
