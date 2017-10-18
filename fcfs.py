@@ -40,6 +40,7 @@ class Process(object):
 		self.cpu_t = cpu_t
 		self.num_bursts = num_bursts
 		self.io_t = io_t
+		self.process_end_t = -1
 
 	def get_process_id(self):
 		return self.process_id
@@ -55,6 +56,12 @@ class Process(object):
 
 	def get_io_t(self):
 		return self.io_t
+
+	def set_process_end_t(self,t):
+		self.process_end_t = t
+
+	def get_process_end_t():
+		return self.process_end_t
 
 	##Decrease number of bursts by 1
 	def burst_complete(self):
