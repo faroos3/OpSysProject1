@@ -40,4 +40,6 @@ if __name__ == '__main__':
 		list_of_processes = get_instructions(sys.argv[1])
 		print(list_of_processes)
 		rr(list_of_processes)
+
+	print(process_list)
 		

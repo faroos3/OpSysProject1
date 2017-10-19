@@ -1,12 +1,7 @@
 ## Ready: in the queue
 ## Running: actively using CPU
 ## Blocked: Blocked on IO
-
-## Ready Queue -> CPU Burst -> Blocked ----
-##	 ^									  |
-##	 |								  	  |
-##	 |									  |
-##   --------------------------------------
+from heapq import heappush, heappop
 
 #Queue, FIFO
 class Queue(object):
@@ -57,7 +52,7 @@ class Process(object):
 		return self.arrival_t0
 
 	def set_arrival_t(self, t):
-		self.arrival_t += t
+		self.arrival_t = t
 
 	def get_cpu_t(self):
 		return self.cpu_t
@@ -97,16 +92,14 @@ class CPU_Burst(object):
 	def __init__(self):
 		self.process_running = None
 		self.start_t = None
-		self.total_time = -1
 
 	##Time t
 	def ready(self,t):
-		self.total_time += 1
 		# No process in cpu
 		if(self.process_running == None):
 			return True
 		# Process in queue is finished, set queue to idle
-		if(self.total_time == (self.start_t + self.process_running.get_cpu_t())):
+		if(t == (self.start_t + self.process_running.get_cpu_t())):
 			return True
 		return False
 
@@ -129,10 +122,12 @@ def fcfs(process_list):
 
 	##Nothing on CPU to begin with
 	cpu = CPU_Burst()
+
+	context_switch = False
+
 	while(1):
 		##Number of processes
 		processes_complete = 0
-
 		for j in process_list:
 
 			##First time seen
@@ -141,6 +136,7 @@ def fcfs(process_list):
 				print("time {}ms: Process {} arrived and added to ready queue [Q {}]".format(i,j,ready_queue))
 			##Any other time
 			elif(i == j.get_arrival_t() and j.get_num_bursts()>0):
+				print("time {}ms: Process {} completed I/O; added to ready queue [Q {}]".format(i,j,ready_queue))
 				ready_queue.enqueue(j)
 
 			##If a processes has finished all of its bursts mark it as complete
@@ -151,40 +147,158 @@ def fcfs(process_list):
 			##Get current process running in CPU (if it exists)
 			current_process = cpu.get_current_cpu_process()
 			if(current_process != None):
-				print("time {}ms: Process {} completed a CPU burst; {} bursts to go [Q {}]".format(i,current_process,current_process.get_num_bursts(),ready_queue))
-				##Process with I/O time plus context switch
-				##Modify arrival time to account for I/O plus context switch
-				i_o_t = i + 4 + current_process.get_io_t()
-				current_process.set_arrival_t(i_o_t)
-				print("time {}ms: Process {} switching out of CPU; will block on I/O until time {}ms [Q {}]".format(i,current_process,i_o_t,ready_queue))
 				if(current_process.get_num_bursts() == 0):
 					print("time {}ms: Process {} terminated [Q {}]".format(i,current_process,ready_queue))
+					context_switch = True
+					i += 4
+				else:
+					print("time {}ms: Process {} completed a CPU burst; {} bursts to go [Q {}]".format(i,current_process,current_process.get_num_bursts(),ready_queue))
+					##Process with I/O time plus context switch
+					##Modify arrival time to account for I/O plus context switch
+					i_o_t = i + 4 + current_process.get_io_t()
+					print("time {}ms: Process {} switching out of CPU; will block on I/O until time {}ms [Q {}]".format(i,current_process,i_o_t,ready_queue))
+					current_process.set_arrival_t(i_o_t)
+					context_switch = True
+					i += 4
+					
+				
 			if((processes_complete == len(process_list))):
 				print("time {}ms: Simulation ended for FCFS".format(i,current_process,i_o_t,ready_queue))
 				break
+
 			##Queue still has processes
 			if(ready_queue.isEmpty() == False):
 				##Get the first process on the queue
 				new_process = ready_queue.dequeue()
+
+				#Context switch
+				context_switch = True
+				i += 4
+
 				##Put it into the CPU
 				cpu.set_cpu(new_process,i)
+
 				print("time {}ms: Process {} started using the CPU [Q {}]".format(i,new_process,ready_queue))
 				##Decriment number of bursts remaining for process
 				new_process.burst_complete()
+				continue
 			else:
 				##CPU is idle
 				cpu.set_cpu(None,None)
-		i+=1
+		if(context_switch != True):
+			i+=1
+		else:
+			context_switch = False
+
+# def srt(process_list):
+# 	##Time
+# 	i=0
+# 	heap = [] ##priority queue
+
+# 	print("time {}ms: Simulator started for FCFS [Q {}]".format(i,ready_queue))
+
+# 	##Nothing on CPU to begin with
+# 	cpu = CPU_Burst()
+
+# 	context_switch = False
+
+# 	while(1):
+# 		##Number of processes
+# 		processes_complete = 0
+# 		for j in process_list:
+# 			current_process = cpu.get_current_cpu_process()
+# 			if(current_process != None):
+# 				if(current_process.get_num_bursts() == 0):
+# 					print("time {}ms: Process {} terminated [Q {}]".format(i,current_process,ready_queue))
+# 					context_switch = True
+# 					i += 4
+# 				else:
+# 					##Check if process is less time than current process
+# 					if(j.get_cpu_t() < current_process.get_cpu_t()):
+# 						#Prempt current process
+# 						cpu.set_cpu(new_process,i)
+# 						#
+# 						heappush(heap, [i,t.])
+
+
+
+# 					print("time {}ms: Process {} completed a CPU burst; {} bursts to go [Q {}]".format(i,current_process,current_process.get_num_bursts(),ready_queue))
+# 					##Process with I/O time plus context switch
+# 					##Modify arrival time to account for I/O plus context switch
+# 					i_o_t = i + 4 + current_process.get_io_t()
+# 					print("time {}ms: Process {} switching out of CPU; will block on I/O until time {}ms [Q {}]".format(i,current_process,i_o_t,ready_queue))
+# 					current_process.set_arrival_t(i_o_t)
+# 					context_switch = True
+# 					i += 4
+			
+
+# 			##Otherwise add to priority queue
+
+# 			##First time seen
+# 			if(i == j.get_arrival_t0()):
+# 				heappush(heap, [i,t.])
+# 				print("time {}ms: Process {} arrived and added to ready queue [Q {}]".format(i,j,ready_queue))
+# 			##Any other time
+# 			elif(i == j.get_arrival_t() and j.get_num_bursts()>0):
+# 				print("time {}ms: Process {} completed I/O; added to ready queue [Q {}]".format(i,j,ready_queue))
+# 				ready_queue.enqueue(j)
+
+# 			##If a processes has finished all of its bursts mark it as complete
+# 			if(j.get_num_bursts() == 0):
+# 				processes_complete += 1
+# 		##If CPU is ready to accept a process
+# 		if(cpu.ready(i)):
+# 			##Get current process running in CPU (if it exists)
+# 			current_process = cpu.get_current_cpu_process()
+# 			if(current_process != None):
+# 				if(current_process.get_num_bursts() == 0):
+# 					print("time {}ms: Process {} terminated [Q {}]".format(i,current_process,ready_queue))
+# 					context_switch = True
+# 					i += 4
+# 				else:
+# 					print("time {}ms: Process {} completed a CPU burst; {} bursts to go [Q {}]".format(i,current_process,current_process.get_num_bursts(),ready_queue))
+# 					##Process with I/O time plus context switch
+# 					##Modify arrival time to account for I/O plus context switch
+# 					i_o_t = i + 4 + current_process.get_io_t()
+# 					print("time {}ms: Process {} switching out of CPU; will block on I/O until time {}ms [Q {}]".format(i,current_process,i_o_t,ready_queue))
+# 					current_process.set_arrival_t(i_o_t)
+# 					context_switch = True
+# 					i += 4
+					
+				
+# 			if((processes_complete == len(process_list))):
+# 				print("time {}ms: Simulation ended for FCFS".format(i,current_process,i_o_t,ready_queue))
+# 				break
+
+# 			##Queue still has processes
+# 			if(ready_queue.isEmpty() == False):
+# 				##Get the first process on the queue
+# 				new_process = ready_queue.dequeue()
+
+# 				#Context switch
+# 				context_switch = True
+# 				i += 4
+
+# 				##Put it into the CPU
+# 				cpu.set_cpu(new_process,i)
+
+# 				print("time {}ms: Process {} started using the CPU [Q {}]".format(i,new_process,ready_queue))
+# 				##Decriment number of bursts remaining for process
+# 				new_process.burst_complete()
+# 				continue
+# 			else:
+# 				##CPU is idle
+# 				cpu.set_cpu(None,None)
+# 		if(context_switch != True):
+# 			i+=1
+# 		else:
+# 			context_switch = False
 
 
 def main():
-	#A|0|168|5|287
-	#B|0|385|1|0
-	#C|190|97|5|2499
-	#D|250|1770|2|822
 	process_list = list([Process('A',0,168,5,287),Process('B',0,385,1,0),Process('C',190,97,5,2499), Process('D',250,1770,2,822)])
 	fcfs(process_list)
-
+	srt(process_list)
 	##Number of processes to simulate
 	n = 0
 
