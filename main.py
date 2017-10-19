@@ -8,6 +8,7 @@ The three algorithms implemented are First Come First Serve, Shortest Remaining 
 
 import sys 
 from rr import rr
+from fcfs import fcfs, Process
 
 # This function will get all the arguments in the filename. 
 def get_instructions(file_name):
@@ -39,8 +40,13 @@ if __name__ == '__main__':
 	if go_through_with_program: 
 		list_of_processes = get_instructions(sys.argv[1])
 		print(list_of_processes)
-		rr(list_of_processes)
+		# rr(list_of_processes)
 
-	print(list_of_processes)
+	real_process_list = []
+	for itr in list_of_processes: 
+		real_process_list.append(Process(itr[0], itr[1], itr[2], itr[3], itr[4]))
+	stats = fcfs(real_process_list)
+	print("===========================================\n")
 	stats = rr(list_of_processes)
+
 		

@@ -307,17 +307,17 @@ def fcfs(process_list):
 # 			context_switch = False
 
 
-def main():
-	process_list = list([Process('A',0,168,5,287),Process('B',0,385,1,0),Process('C',190,97,5,2499), Process('D',250,1770,2,822)])
-	fcfs(process_list)
-	srt(process_list)
-	##Number of processes to simulate
-	n = 0
+# def main():
+# 	# process_list = list([Process('A',0,168,5,287),Process('B',0,385,1,0),Process('C',190,97,5,2499), Process('D',250,1770,2,822)])
+# 	# fcfs(process_list)
+# 	# srt(process_list)
+# 	##Number of processes to simulate
+# 	# n = 0
 
-	##Time to perform context_switch (ms)
-	t_cs = 8
+# 	# ##Time to perform context_switch (ms)
+# 	# t_cs = 8
 	
 
-if __name__ == '__main__':
-	main()
+# if __name__ == '__main__':
+# 	main()
 
