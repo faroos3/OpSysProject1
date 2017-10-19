@@ -41,5 +41,6 @@ if __name__ == '__main__':
 		print(list_of_processes)
 		rr(list_of_processes)
 
-	print(process_list)
+	print(list_of_processes)
+	stats = rr(list_of_processes)
 		

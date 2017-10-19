@@ -16,6 +16,7 @@ Notes:
 	- might need to make an equals operator for Process so i can .index()
 	- add a member variable to John's thing called wait time 
 	-- go through each process and check to see if it's the active process. Go through the I/O adjacency list. if it's not there, and it's not the active process, and i is greater than arrival time, then up wait time by 1. 
+	- need to add a variable to keep track of cs and preepmtions. 
 RR PC: 
 	real_process_list = [] # going to use the Process class S/O John 
 	for process in process_list: 
@@ -29,6 +30,8 @@ RR PC:
 	t_action = 0 
 	i = 0
 	j = 0 
+	num_cs = 0 
+	num_preempts = 0
 	all_done = False # boolean flag to see if we're done w/ all processes. 
 	cs_flag = False # context switch flag. if it happens, then don't i+=1.
 	current_process_i = 0 
@@ -118,9 +121,8 @@ RR PC:
 def rr(process_list):
 	real_process_list = [] # going to use the Process class S/O John 
 	for process in process_list: 
-		process_obj = Process(process)
+		process_obj = Process(process[0], process[1], process[2], process[3], process[4])
 		real_process_list.append(process_obj)
-	
 	t_slice = 70 # this is the time_slice that each process gets. 
 	t_cs = 8 
 	q = Queue()
@@ -128,18 +130,93 @@ def rr(process_list):
 	# it will preempt if there is a process running. 
 	t_action = 0 
 	i = 0
+	j = 0 
+	num_cs = 0 
+	num_active_processes = 0
+	num_preempts = 0
+	all_done = False # boolean flag to see if we're done w/ all processes. 
+	cs_flag = False # context switch flag. if it happens, then don't i+=1.
+	current_process_i = 0 
 	active_process = None # this is if there is an active process running. 
-	cpu = CPU_Burst()
+	cpu = CPU_Burst() # might not use this. will try not to. 
+	# set up an adjacency list of active times left per burst for each process
+	remaining_burst_times = [] 
+	io_list = [] 
+	print("time 0ms: Simulator started for RR [Q <empty>]")
+	for num in range(len(process_list)):
+		remaining_burst_times.append(0)
+		io_list.append((0, None)) # first entry is time to add back to q, second is process. 
 	
 	while (i < 200000): # start the process 
-		# for process in process_list:
-			# if(i == process.get_arrival_t()):
-				# q.enqueue(j)
-		# # If cpu ready to take in process. 
-		# if(cpu.ready(i)): 
-			# active_process = cpu.get_current_process()
-		for process in process_list:
+		cs_flag = False
+		all_done = True # dangerous, but try it anyway. 
+		for process in real_process_list:
 			if(i == process.get_arrival_t()):
 				q.enqueue(process)
+				print(("time {:d}ms: Process {} arrived and added to ready queue").format(i, process.get_process_id()), str(q))
+				num_active_processes +=1 # WARNING 
+		if (not q.isEmpty() and active_process == None):
+			active_process = q.dequeue()
+			t_action = 0
+			for current_process_i in range(len(real_process_list)):
+				if real_process_list[current_process_i].get_process_id() == active_process.get_process_id():
+					break
+			io_list[current_process_i] = (0, False)
+			if(remaining_burst_times[current_process_i] <= 0):
+				remaining_burst_times[current_process_i] = active_process.get_cpu_t()
+			# if not first process 
+			if (num_active_processes != 1):
+				i += t_cs//2
+				cs_flag = True
+			# put print statement here 
+			print(("time {:d}ms: Process {} started using the CPU").format(i, active_process.get_process_id()), str(q)) # q doesn't have an str. 
+		# preempt
+		if t_action == t_slice and remaining_burst_times[current_process_i] != 0: 
+			if not q.isEmpty(): # there are other processes waiting to run 
+				t_action = 0 
+				print(("time {:d}ms: Time slice expired; process {} preempted with {:d}ms to go").format(i, active_process.get_process_id(), remaining_burst_times[current_process_i]), str(q))
+				q.enqueue(active_process)
+				active_process = None 
+				num_preempts += 1
+			else: # continue on with the current process 
+				t_action = 0
+				print("time {:d}ms: Time slice expired; no preemption because ready queue is empty".format(i), str(q))
+		elif remaining_burst_times[current_process_i] == 0: # don't think I need to do anything w/ time_slice here, if there's an issue then do so
+			# this should be if a process is all done. 
+			t_action = 0 
+			active_process.burst_complete()
+			if active_process.get_num_bursts() == 0: 
+				print(("time {:d}ms: Process {} terminated").format(i, active_process.get_process_id()), str(q))
+				active_process = None 
+			elif (active_process.get_num_bursts() != 0):
+				print(("time {:d}ms: Process {} completed a CPU burst; {:d} to go").format(i, active_process.get_process_id(), active_process.get_num_bursts()), str(q))
+				time_to_start = i + active_process.get_io_t()
+				print(("time {:d}ms: Process {} switching out of CPU; will block on I/O until time").format(i, active_process.get_process_id()), str(time_to_start)+"ms", str(q))
+				io_list[current_process_i] = (time_to_start, active_process)
+				active_process = None 
+				i += t_cs
+				cs_flag = True
 		
-	return 0
+		# go through I/O list and see if anything needs to be added. 
+		for itr in range(len(io_list)):
+			if io_list[itr][0] == i and io_list[itr][1] != None:
+				q.enqueue(io_list[itr][1])
+				print(("time {:d}ms: Process {} completed I/O; added to ready queue").format(i, io_list[itr][1].get_process_id()), str(q))
+				io_list[itr] = ((0, False))
+		if(q.isEmpty()):
+			for process_itr in real_process_list:
+				if process_itr.get_arrival_t() > i:
+					all_done = False
+			for itr in range(len(io_list)):
+				if io_list[itr][0] != 0 and io_list[itr][1] != None:
+					all_done = False
+		else:
+			all_done = False
+		if (all_done):
+			print(("time {:d}ms: Simulator ended for RR").format(i))
+			break 
+		if(not cs_flag):
+			i+=1 
+		t_action += 1 
+		remaining_burst_times[current_process_i] -=1 
+	return 0 # will be a tuple of stats. 

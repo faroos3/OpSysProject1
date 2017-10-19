@@ -26,7 +26,16 @@ class Queue(object):
 		return len(self.items)
 
 	def __str__(self):
-		return str(self.items)
+		if (len(self.items)) == 0:
+			return "[Q <empty>]"
+		else: 
+			meh = "" 
+			meh += "[Q "
+			for i in self.items:
+				meh += i.get_process_id() + ' '
+			meh = meh.rstrip()
+			meh += ']'
+			return meh
 
 #Contains info for each process
 class Process(object):
@@ -69,16 +78,19 @@ class Process(object):
 	def set_process_end_t(self,t):
 		self.process_end_t = t
 
-	def get_process_end_t():
+	def get_process_end_t(self):
 		return self.process_end_t
+		
+	def get_wait_time(self):
+		return self.wait_time
 
 	# Decrease number of bursts by 1
 	def burst_complete(self):
 		self.num_bursts -= 1
 
 	# Compare processes based on CPU burst time
-	def __cmp__(self, other):
-		return cmp(self.get_cpu_t(), other.get_cpu_t())
+	def __lt__(self, other):
+		return self.get_cpu_t() < other.get_cpu_t()
 
 	def __str__(self):
 		return self.process_id
