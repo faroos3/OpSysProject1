@@ -8,7 +8,7 @@ The three algorithms implemented are First Come First Serve, Shortest Remaining 
 
 import sys 
 from rr import rr
-from srt import srt
+
 # This function will get all the arguments in the filename. 
 def get_instructions(file_name):
 	process_list = []
@@ -38,5 +38,6 @@ if __name__ == '__main__':
 	
 	if go_through_with_program: 
 		list_of_processes = get_instructions(sys.argv[1])
+		# print(list_of_processes)
 		stats = rr(list_of_processes)
 		
