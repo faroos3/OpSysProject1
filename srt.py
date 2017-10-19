@@ -22,7 +22,7 @@ def increase_wait_time(queue):
 		(process[1]).increase_wait_time()
 
 
-def SRT(process_list):	
+def srt(process_list):	
 	t = 0    				# time in ms
 	t_cs = 8 				# time to perform context switch
 	IO_list = {} 			# { {time process's IO will finish : process} }
@@ -32,6 +32,8 @@ def SRT(process_list):
 	current_process = None
 	context_switch = False  # check for context switch
 	completed_processes = []
+
+	context = avg_wait = avg_turn = avg_burst = preemption = 0
 
 	print("time 0ms: Simulator started for SRT [Q <empty>]")
 	while(t < 50000):
@@ -56,6 +58,8 @@ def SRT(process_list):
 
 					# Set the process as the new current process
 					t+=t_cs # Account for context switch
+					context+=1
+					preemption+=1
 					current_process = process
 					burst_end_time = t+current_process.get_cpu_t()
 					print("time {}ms: Process {} started using the CPU {}".format(t,current_process,format_queue(ready_queue)))
@@ -68,8 +72,9 @@ def SRT(process_list):
 
 		# Start a process if the CPU is open
 		if ready == True and current_process == None and len(ready_queue) > 0:
-			ready = False
 			t += 4 # Account for time to put process on queue
+			context+=1
+			ready = False
 			queued_process = heapq.heappop(ready_queue)
 			burst_end_time, current_process = queued_process[0]+t, queued_process[1]
 			if queued_process[0] < current_process.get_cpu_t():
@@ -104,7 +109,8 @@ def SRT(process_list):
 
 			# Get the next process from the queue if there is one
 			if len(ready_queue) > 0:
-				t += t_cs # Account for context switch
+				t+=t_cs # Account for context switch
+				context+=1
 				context_switch = True
 				queued_process = heapq.heappop(ready_queue)
 				burst_end_time, current_process = queued_process[0]+t, queued_process[1]
@@ -137,9 +143,11 @@ def SRT(process_list):
 
 						print("time {}ms: Process {} completed I/O and will preempt {} {}".format(t,process,current_process,format_queue(ready_queue)))
 						heapq.heappush(ready_queue,[burst_end_time-t, current_process])
-						current_process = process
+						t+=t_cs # Account for context switch
+						context+=1
+						preemption+=1
 						context_switch = True
-						t += t_cs # Account for context switch
+						current_process = process
 						burst_end_time = t+current_process.get_cpu_t()
 						print("time {}ms: Process {} started using the CPU {}".format(t,current_process,format_queue(ready_queue)))
 
@@ -165,19 +173,37 @@ def SRT(process_list):
 			t+=1
 		else:
 			context_switch = False
-
-	return completed_processes 
+	
+	# Calulate stats
+	for process in completed_processes:
+		avg_wait+=process.get_wait_time()
+		avg_burst+=process.get_cpu_t()
+		avg_turn+=process.get_wait_time()+process.get_cpu_t()
+	
+	return [float(avg_burst),float(avg_wait),float(avg_turn),context,preemption] 
 
 if __name__ == '__main__':
 	
-	# <proc-id>|<initial-arrival-time>|<cpu-burst-time>|<num-bursts>|<io-time>
+	# Input 1
+	# process_list = list([
+	# 	Process('A',0,168,5,287),
+	# 	Process('B',0,385,1,0),
+	# 	Process('C',190,97,5,2499), 
+	# 	Process('D',250,1770,2,822)
+	# ])
+
+	# Input 2
 	process_list = list([
-		Process('A',0,168,5,287),
-		Process('B',0,385,1,0),
-		Process('C',190,97,5,2499), 
-		Process('D',250,1770,2,822)
+		Process('X',0,80,5,500)
 	])
-	
-	result = SRT(process_list)
+
+	# Input 3
+	# process_list = list([
+	# 	Process('X',0,560,5,20),
+	# 	Process('Y',0,840,5,20),
+	# 	Process('Z',0,924,5,20)
+	# ])
+
+	print(SRT(process_list))
 
 
