@@ -31,7 +31,16 @@ class Queue(object):
 		return len(self.items)
 
 	def __str__(self):
-		return str(self.items)
+		if (len(self.items)) == 0:
+			return "[Q <empty>]"
+		else: 
+			meh = "" 
+			meh += "[Q "
+			for i in self.items:
+				meh += i.get_process_id() + ' '
+			meh = meh.rstrip()
+			meh += ']'
+			return meh
 
 #Contains info for each process
 class Process(object):

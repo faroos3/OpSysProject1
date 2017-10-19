@@ -121,7 +121,7 @@ RR PC:
 def rr(process_list):
 	real_process_list = [] # going to use the Process class S/O John 
 	for process in process_list: 
-		process_obj = Process(process)
+		process_obj = Process(process[0], process[1], process[2], process[3], process[4])
 		real_process_list.append(process_obj)
 	t_slice = 70 # this is the time_slice that each process gets. 
 	t_cs = 8 
@@ -142,9 +142,10 @@ def rr(process_list):
 	# set up an adjacency list of active times left per burst for each process
 	remaining_burst_times = [] 
 	io_list = [] 
+	print("time 0ms: Simulator started for RR [Q <empty>]")
 	for num in range(len(process_list)):
 		remaining_burst_times.append(0)
-		io_list.append(0, None) # first entry is time to add back to q, second is process. 
+		io_list.append((0, None)) # first entry is time to add back to q, second is process. 
 	
 	while (i < 200000): # start the process 
 		cs_flag = False
@@ -152,8 +153,9 @@ def rr(process_list):
 		for process in real_process_list:
 			if(i == process.get_arrival_t()):
 				q.enqueue(process)
-				num_active_processes +=1 
-		if (!q.isEmpty() and active_process == None):
+				print(("time {:d}ms: Process {} arrived and added to ready queue").format(i, process.get_process_id()), str(q))
+				num_active_processes +=1 # WARNING 
+		if (not q.isEmpty() and active_process == None):
 			active_process = q.dequeue()
 			t_action = 0
 			for current_process_i in range(len(real_process_list)):
@@ -164,7 +166,7 @@ def rr(process_list):
 				remaining_burst_times[current_process_i] = active_process.get_cpu_t()
 			# if not first process 
 			if (num_active_processes != 1):
-				i += cs_time
+				i += t_cs//2
 				cs_flag = True
 			# put print statement here 
 			print(("time {:d}ms: Process {} started using the CPU").format(i, active_process.get_process_id()), str(q)) # q doesn't have an str. 
@@ -178,16 +180,16 @@ def rr(process_list):
 				num_preempts += 1
 			else: # continue on with the current process 
 				t_action = 0
-				print(("time {:d}ms: Time slice expired; no preemption because ready queue is empty".format(i), str(q))
+				print("time {:d}ms: Time slice expired; no preemption because ready queue is empty".format(i), str(q))
 		elif remaining_burst_times[current_process_i] == 0: # don't think I need to do anything w/ time_slice here, if there's an issue then do so
 			# this should be if a process is all done. 
 			t_action = 0 
 			active_process.burst_complete()
 			if active_process.get_num_bursts() == 0: 
-				print(("time {:d}ms: Process {} terminated").format(active_process.get_process_id()), str(q))
+				print(("time {:d}ms: Process {} terminated").format(i, active_process.get_process_id()), str(q))
 				active_process = None 
 			elif (active_process.get_num_bursts() != 0):
-				print(("time {:d}ms: Process {} completed a CPU burst; {:d} to go").format(i, active_process.get_process_id(), active_process.get_num_bursts()))
+				print(("time {:d}ms: Process {} completed a CPU burst; {:d} to go").format(i, active_process.get_process_id(), active_process.get_num_bursts()), str(q))
 				time_to_start = i + active_process.get_io_t()
 				print(("time {:d}ms: Process {} switching out of CPU; will block on I/O until time").format(i, active_process.get_process_id()), str(time_to_start)+"ms", str(q))
 				io_list[current_process_i] = (time_to_start, active_process)
@@ -199,8 +201,8 @@ def rr(process_list):
 		for itr in range(len(io_list)):
 			if io_list[itr][0] == i and io_list[itr][1] != None:
 				q.enqueue(io_list[itr][1])
-				print(("time {:d}: Process {} completed I/O; added to ready queue").format(), str(q))
-				io_list[itr] = (0, False)
+				print(("time {:d}ms: Process {} completed I/O; added to ready queue").format(i, io_list[itr][1].get_process_id()), str(q))
+				io_list[itr] = ((0, False))
 		if(q.isEmpty()):
 			for process_itr in real_process_list:
 				if process_itr.get_arrival_t() > i:
@@ -213,4 +215,8 @@ def rr(process_list):
 		if (all_done):
 			print(("time {:d}ms: Simulator ended for RR").format(i))
 			break 
+		if(not cs_flag):
+			i+=1 
+		t_action += 1 
+		remaining_burst_times[current_process_i] -=1 
 	return 0 # will be a tuple of stats. 
