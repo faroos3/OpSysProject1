@@ -74,8 +74,11 @@ class Process(object):
 	def set_process_end_t(self,t):
 		self.process_end_t = t
 
-	def get_process_end_t():
+	def get_process_end_t(self):
 		return self.process_end_t
+		
+	def get_wait_time(self):
+		return self.wait_time
 
 	# Decrease number of bursts by 1
 	def burst_complete(self):
