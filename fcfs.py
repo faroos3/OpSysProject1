@@ -258,7 +258,7 @@ def rr(process_list):
 	i=0
 	t_slice = 70
 	ready_queue = Queue()
-
+	preemption = num_cs = 0 # where the STATS are going to be initialized. 
 	print("time {}ms: Simulator started for RR {}".format(i,ready_queue))
 
 	##Nothing on CPU to begin with
@@ -298,6 +298,7 @@ def rr(process_list):
 						new_time = current_process.get_cpu_t() - t_slice
 						print(("time {:d}ms: Time slice expired; process {} preempted with {:d}ms to go {}").format(i, current_process, new_time, ready_queue))
 						#!
+						preemption += 1
 						current_process.set_cpu_t(new_time)
 						ready_queue.enqueue(current_process)
 						context_switch = True
@@ -357,4 +358,7 @@ def rr(process_list):
 		if(context_switch != True):
 			i+=1
 		else:
+			num_cs +=1 
 			context_switch = False
+	stats = [num_cs, preemption]
+	return 
