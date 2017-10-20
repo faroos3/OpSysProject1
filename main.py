@@ -59,8 +59,9 @@ if __name__ == '__main__':
 
 		# Call each algorithm and report the stats
 		# fcfs = fcfs(process_list)
-		# srt = srt(process_list)
+		srt = srt(process_list)
 		rr = rr(process_list)
 		# print_stats(fcfs(process_list), "FCFS")
 		print_stats(srt,"SRT")
+		print_stats(rr, "RR")
 		
