@@ -53,8 +53,7 @@ class Process(object):
 		self.io_t = io_t
 		self.process_end_t = -1
 		self.wait_time = 0
-
-
+		self.added = False
 
 	def get_process_id(self):
 		return self.process_id
@@ -106,6 +105,11 @@ class Process(object):
 		return self.cpu_t0
 
 
+	def wasAdded(self):
+		return self.added
+
+	def setAdded(self,boolean):
+		self.added = boolean
 
 	# Compare processes based on CPU burst time
 	def __lt__(self, other):
@@ -140,7 +144,7 @@ class CPU_Burst(object):
 		# No process in cpu
 		if(self.process_running == None):
 			return 0
-		if(t == self.start_t + self.t_slice):
+		if((t == self.start_t + self.t_slice) and (t != (self.start_t + self.process_running.get_cpu_t()))):
 			return 1
 		# Process in queue is finished, set queue to idle
 		if(t == (self.start_t + self.process_running.get_cpu_t())):
@@ -162,6 +166,8 @@ def fcfs(process_list):
 	# Time
 	i=0
 	ready_queue = Queue()
+	processes_complete = 0
+	added = False
 	completed_processes = []
 	context = avg_wait = avg_turn = avg_burst = preemption = 0
 
@@ -172,39 +178,22 @@ def fcfs(process_list):
 	context_switch = False
 
 	while(1):
-		
-		# Number of processes
-		processes_complete = 0
-		for j in process_list:
-
-			# First time seen
-			if(i == j.get_arrival_t0()):
-				ready_queue.enqueue(j)
-				print("time {}ms: Process {} arrived and added to ready queue {}".format(i,j,ready_queue))
-			
-			# Any other time
-			elif(i == j.get_arrival_t() and j.get_num_bursts()>0):
-				print("time {}ms: Process {} completed I/O; added to ready queue {}".format(i,j,ready_queue))
-				ready_queue.enqueue(j)
-
-			# If a processes has finished all of its bursts mark it as complete
-			if(j.get_num_bursts() == 0):
-				processes_complete += 1
-		
 		# If CPU is ready to accept a process
 		if(cpu.ready(i)):
-			
 			# Get current process running in CPU (if it exists)
 			current_process = cpu.get_current_cpu_process()
 			if(current_process != None):
 				if(current_process.get_num_bursts() == 0):
 					print("time {}ms: Process {} terminated {}".format(i,current_process,ready_queue))
+					processes_complete += 1
 					context_switch = True
 					context+=1
 					i += 4
 				else:
-					print("time {}ms: Process {} completed a CPU burst; {} bursts to go {}".format(i,current_process,current_process.get_num_bursts(),ready_queue))
-					
+					if(current_process.get_num_bursts()>1):
+						print("time {}ms: Process {} completed a CPU burst; {} bursts to go {}".format(i,current_process,current_process.get_num_bursts(),ready_queue))
+					else:
+						print("time {}ms: Process {} completed a CPU burst; {} burst to go {}".format(i,current_process,current_process.get_num_bursts(),ready_queue))
 					# Process with I/O time plus context switch
 					# Modify arrival time to account for I/O plus context switch
 					i_o_t = i + 4 + current_process.get_io_t()
@@ -213,12 +202,30 @@ def fcfs(process_list):
 					context_switch = True
 					context+=1
 					i += 4
-					
 				
 			if((processes_complete == len(process_list))):
-				print("time {}ms: Simulation ended for FCFS".format(i))
+				print("time {}ms: Simulator ended for FCFS".format(i))
 				break
+				# Number of processes
 
+		for j in process_list:
+			# Any other time
+			if(i == j.get_arrival_t() and j.get_arrival_t() != j.get_arrival_t0()):
+				ready_queue.enqueue(j)
+				print("time {}ms: Process {} completed I/O; added to ready queue {}".format(i,j,ready_queue))
+			elif(context_switch and ((i-4) == j.get_arrival_t() and j.get_arrival_t() != j.get_arrival_t0())):
+				ready_queue.enqueue(j)
+				print("time {}ms: Process {} completed I/O; added to ready queue {}".format(i-4,j,ready_queue))
+						# First time seen
+			elif(i == j.get_arrival_t0()):
+				ready_queue.enqueue(j)
+				print("time {}ms: Process {} arrived and added to ready queue {}".format(i,j,ready_queue))
+				j.setAdded(True)
+			elif(context_switch and ((i-4) == j.get_arrival_t0())):
+				ready_queue.enqueue(j)
+				print("time {}ms: Process {} completed I/O; added to ready queue {}".format(i-4,j,ready_queue))
+		# If CPU is ready to accept a process
+		if(cpu.ready(i) or (cpu.ready(i-4) and context_switch)):
 			# Queue still has processes
 			if(ready_queue.isEmpty() == False):
 				##Get the first process on the queue
@@ -235,11 +242,11 @@ def fcfs(process_list):
 				print("time {}ms: Process {} started using the CPU {}".format(i,new_process,ready_queue))
 				##Decriment number of bursts remaining for process
 				new_process.burst_complete()
-				# continue
 				
 			else:
 				##CPU is idle
 				cpu.set_cpu(None,None,None)
+
 		if(context_switch != True):
 			i+=1
 		else:
@@ -256,7 +263,9 @@ def fcfs(process_list):
 def rr(process_list):
 	##Time
 	i=0
+	counter = 0
 	t_slice = 70
+	processes_complete = 0
 	ready_queue = Queue()
 
 	print("time {}ms: Simulator started for RR {}".format(i,ready_queue))
@@ -265,96 +274,87 @@ def rr(process_list):
 	cpu = CPU_Burst()
 
 	context_switch = False
-
+	k=0
 	while(1):
-		##Number of processes
-		processes_complete = 0
+		counter = i
+		if((cpu.ready_rr(i) == 0) or (cpu.ready_rr(i) == 1) or (cpu.ready_rr(i) == 2)):
+			##Get current process running in CPU (if it exists)
+			current_process = cpu.get_current_cpu_process()
+			if(current_process != None):
+				if((current_process.get_num_bursts() == 0) and (cpu.ready_rr(i) == 2)):
+					print("time {}ms: Process {} terminated {}".format(counter,current_process,ready_queue))
+					processes_complete += 1
+					context_switch = True
+					counter+= 4
+				elif(cpu.ready_rr(i) == 1):
+					##if it was preempted by timeslice
+					if(not ready_queue.isEmpty()):
+						new_time = current_process.get_cpu_t() - t_slice
+						print(("time {:d}ms: Time slice expired; process {} preempted with {:d}ms to go {}").format(counter, current_process, new_time, ready_queue))
+						cpu.set_cpu(None,None,None)
+						current_process.set_cpu_t(new_time)
+						ready_queue.enqueue(current_process)
+						context_switch = True
+						counter+= 4
+					else:
+						new_time = current_process.get_cpu_t() - t_slice
+						print(("time {:d}ms: Time slice expired; no preemption because ready queue is empty {}").format(counter,ready_queue))
+						current_process.set_cpu_t(new_time)
+						cpu.set_cpu(current_process,i,t_slice)
+						i+=1
+						counter+=1
+						continue
+				else:
+					if(current_process.get_num_bursts()>1):
+						print("time {}ms: Process {} completed a CPU burst; {} bursts to go {}".format(counter,current_process,current_process.get_num_bursts(),ready_queue))
+					else:
+						print("time {}ms: Process {} completed a CPU burst; {} burst to go {}".format(counter,current_process,current_process.get_num_bursts(),ready_queue))
+					##Process with I/O time plus context switch
+					##Modify arrival time to account for I/O plus context switch
+					current_process.set_cpu_t(current_process.get_cpu_t0())
+					i_o_t = counter + 4 + current_process.get_io_t()
+					print("time {}ms: Process {} switching out of CPU; will block on I/O until time {}ms {}".format(counter,current_process,i_o_t,ready_queue))
+					current_process.set_arrival_t(i_o_t)
+					cpu.set_cpu(None,None,None)
+					context_switch = True
+					counter+= 4
+
+			if((processes_complete == len(process_list))):
+				print("time {}ms: Simulator ended for RR".format(counter))
+				break
 		for j in process_list:
 
 			##First time seen
 			if(i == j.get_arrival_t0()):
 				ready_queue.enqueue(j)
 				print("time {}ms: Process {} arrived and added to ready queue {}".format(i,j,ready_queue))
-			##Any other time
-			elif(i == j.get_arrival_t() and j.get_num_bursts()>0):
+			# ##Any other time
+			elif(i == j.get_arrival_t()):
 				ready_queue.enqueue(j)
 				print("time {}ms: Process {} completed I/O; added to ready queue {}".format(i,j,ready_queue))
-
-			##If a processes has finished all of its bursts mark it as complete
-			if(j.get_num_bursts() == 0):
-				processes_complete += 1
-		##If CPU is ready to accept a process
 		if((cpu.ready_rr(i) == 0) or (cpu.ready_rr(i) == 1) or (cpu.ready_rr(i) == 2)):
-			##Get current process running in CPU (if it exists)
-			current_process = cpu.get_current_cpu_process()
-			if(current_process != None):
-				if((current_process.get_num_bursts() == 0) and (cpu.ready_rr(i) == 2)):
-					print("time {}ms: Process {} terminated {}".format(i,current_process,ready_queue))
-					context_switch = True
-					i += 4
-				elif(cpu.ready_rr(i) == 1):
-					##if it was preempted by timeslice
-					if(not ready_queue.isEmpty()):
-						new_time = current_process.get_cpu_t() - t_slice
-						print(("time {:d}ms: Time slice expired; process {} preempted with {:d}ms to go {}").format(i, current_process, new_time, ready_queue))
-						#!
-						current_process.set_cpu_t(new_time)
-						ready_queue.enqueue(current_process)
-						context_switch = True
-						i += 4	
-
-					else:
-						new_time = current_process.get_cpu_t() - t_slice
-						print(("time {:d}ms: Time slice expired; no preemption because ready queue is empty {}").format(i,ready_queue))
-						current_process.set_cpu_t(new_time)
-						cpu.set_cpu(current_process,i,t_slice)
-						i+=1
-						continue
-						# print("time {}ms: Process {} completed a CPU burst; {} bursts to go [Q {}]".format(i,current_process,current_process.get_num_bursts(),ready_queue))
-						# need to keep the original cpu_time as well since 
-						# for other bursts since it has to start from original. Extra mem var? 
-						# make sure to take into account the case where the process is done before 
-						# the time slice. How should that be implemented with CPU_burst class? 
-						##adjust the cpu burst time
-				else:
-					print("time {}ms: Process {} completed a CPU burst; {} bursts to go {}".format(i,current_process,current_process.get_num_bursts(),ready_queue))
-					##Process with I/O time plus context switch
-					##Modify arrival time to account for I/O plus context switch
-					current_process.set_cpu_t(current_process.get_cpu_t0())
-					i_o_t = i + 4 + current_process.get_io_t()
-					print("time {}ms: Process {} switching out of CPU; will block on I/O until time {}ms {}".format(i,current_process,i_o_t,ready_queue))
-					current_process.set_arrival_t(i_o_t)
-					context_switch = True
-					i += 4
-					
-				
-			if((processes_complete == len(process_list))):
-				print("time {}ms: Simulation ended for RR".format(i))
-				break
-
 			##Queue still has processes
-			if(ready_queue.isEmpty() == False):
+			if(not ready_queue.isEmpty()):
 				##Get the first process on the queue
 				new_process = ready_queue.dequeue()
-
 				#Context switch
 				context_switch = True
-				i += 4
-
-				##Put it into the CPU
-				cpu.set_cpu(new_process,i,t_slice)
+				counter += 4
+				cpu.set_cpu(new_process,counter,t_slice)
 
 				##Decriment number of bursts remaining for process
 				##First slice of a new burst
 				if(new_process.get_cpu_t() == new_process.get_cpu_t0()):
 					new_process.burst_complete()
-					print("time {}ms: Process {} started using the CPU {}".format(i,new_process,ready_queue))
+					print("time {}ms: Process {} started using the CPU {}".format(counter,new_process,ready_queue))
 				else:
-					print("time {}ms: Process {} started using the CPU with {}ms remaining {}".format(i,new_process,new_process.get_cpu_t(),ready_queue))
+					print("time {}ms: Process {} started using the CPU with {}ms remaining {}".format(counter,new_process,new_process.get_cpu_t(),ready_queue))
 			else:
 				##CPU is idle
 				cpu.set_cpu(None,None,None)
-		if(context_switch != True):
-			i+=1
+		if(not context_switch):
+			counter+=1
 		else:
 			context_switch = False
+		i+=1
+		k+=1

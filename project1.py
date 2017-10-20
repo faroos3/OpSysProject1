@@ -45,7 +45,7 @@ if __name__ == '__main__':
 	process_input = []
 	go_through_with_program = True
 
-	if len(sys.argv) < 2: 
+	if len(sys.argv) < 3: 
 		print("ERROR: Not enough commandline arguments.")
 		go_through_with_program = False 
 	
@@ -56,11 +56,18 @@ if __name__ == '__main__':
 
 		# Convert file input to a series of Process objects
 		process_list = [Process(p[0],p[1],p[2],p[3],p[4]) for p in list_of_processes]
+		process_list1 = [Process(p[0],p[1],p[2],p[3],p[4]) for p in list_of_processes]
+		process_list2 = [Process(p[0],p[1],p[2],p[3],p[4]) for p in list_of_processes]
 
 		# Call each algorithm and report the stats
-		# fcfs = fcfs(process_list)
-		# srt = srt(process_list)
-		rr = rr(process_list)
+		fcfs = fcfs(process_list)
+		print("")
+		srt = srt(process_list1)
+		print("")
+		rr = rr(process_list2)
+		filename = sys.argv[2]
+		with open(filename,'w') as f:
+			f.write("1")
 		# print_stats(fcfs(process_list), "FCFS")
-		print_stats(srt,"SRT")
+		# print_stats(srt,"SRT")
 		
