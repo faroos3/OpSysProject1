@@ -211,10 +211,10 @@ if __name__ == '__main__':
 	# ])
 
 	# Input 6
-	process_list = list([
-		Process("A",0,20,5,40),
-		Process("B",20,36,2,100),
-		Process("C",68,30,1,0)
-	])
+	# process_list = list([
+	# 	Process("A",0,20,5,40),
+	# 	Process("B",20,36,2,100),
+	# 	Process("C",68,30,1,0)
+	# ])
 
-	srt(process_list)
+	# srt(process_list)

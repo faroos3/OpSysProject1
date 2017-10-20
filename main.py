@@ -8,7 +8,7 @@ The three algorithms implemented are First Come First Serve, Shortest Remaining 
 
 import sys 
 from fcfs import *
-from rr import rr
+from fcfs import rr
 from srt import srt
 
 # This function will get all the arguments in the filename. 
@@ -59,8 +59,8 @@ if __name__ == '__main__':
 
 		# Call each algorithm and report the stats
 		# fcfs = fcfs(process_list)
-		srt = srt(process_list)
-		# rr = rr(process_list)
+		# srt = srt(process_list)
+		rr = rr(process_list)
 		# print_stats(fcfs(process_list), "FCFS")
 		print_stats(srt,"SRT")
 		
