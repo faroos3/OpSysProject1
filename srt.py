@@ -29,10 +29,11 @@ def srt(process_list):
 	ready = True			# CPU state
 	ready_queue = []		# heapq, [ [process cpu burst time, process] ]
 	burst_end_time = 0 		# time the current process will finish it's burst
-	current_process = None
 	context_switch = False  # check for context switch
+	current_process = None
 	completed_processes = []
 
+	# turnaround time = arrivaltime + t
 	context = avg_wait = avg_turn = avg_burst = preemption = 0
 
 	print("time 0ms: Simulator started for SRT [Q <empty>]")
@@ -135,6 +136,7 @@ def srt(process_list):
 				# Check if process terminated
 				if process.get_num_bursts() == 0:
 					print("time {}ms: Process {} terminated {}".format(t,process,format_queue(ready_queue)))
+					process.set_end_t(t)
 					completed_processes.append(process)
 				else:
 
@@ -160,7 +162,8 @@ def srt(process_list):
 				break
 
 		# Increase the wait time of all processes in the queue
-		increase_wait_time(ready_queue)
+		if len(ready_queue) > 1:
+			increase_wait_time(ready_queue)
 
 		# Exit when all processes are complete (No mory CPU Bursts or IO Operations)
 		if len(process_list) == len(completed_processes):
@@ -176,11 +179,11 @@ def srt(process_list):
 	
 	# Calulate stats
 	for process in completed_processes:
-		avg_wait+=process.get_wait_time()
 		avg_burst+=process.get_cpu_t()
-		avg_turn+=process.get_wait_time()+process.get_cpu_t()
+		avg_wait+=process.get_wait_time()
+		avg_turn+=process.get_arrival_t()+process.get_cpu_t()
 	
-	return [float(avg_burst),float(avg_wait),float(avg_turn),context,preemption] 
+	return [float(avg_burst)/len(process_list),float(avg_wait)/len(process_list),float(avg_turn)/len(process_list),context,preemption] 
 
 if __name__ == '__main__':
 	
@@ -203,7 +206,5 @@ if __name__ == '__main__':
 	# 	Process('Y',0,840,5,20),
 	# 	Process('Z',0,924,5,20)
 	# ])
-
-	print(SRT(process_list))
 
 

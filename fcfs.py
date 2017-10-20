@@ -43,10 +43,11 @@ class Process(object):
 	def __init__(self,process_id,arrival_t,cpu_t,num_bursts,io_t):
 		self.process_id = process_id;
 		self.arrival_t = arrival_t
-		##Initial arrival time
+		# Initial arrival time
 		self.arrival_t0 = arrival_t
+		self.end_t = 0
 		self.cpu_t = cpu_t
-		##Initial cpu burst time
+		# Initial cpu burst time
 		self.cpu_t0 = cpu_t
 		self.num_bursts = num_bursts
 		self.io_t = io_t
@@ -64,8 +65,14 @@ class Process(object):
 	def get_arrival_t0(self):
 		return self.arrival_t0
 
+	def get_end_t(self):
+		return self.end_t
+
 	def set_arrival_t(self, t):
 		self.arrival_t = t
+
+	def set_end_t(self, t):
+		self.end_t = t
 
 	def get_cpu_t(self):
 		return self.cpu_t
@@ -149,54 +156,62 @@ class CPU_Burst(object):
 	def get_current_cpu_process(self):
 		return self.process_running
 
-###io burst
+# io burst
 
 def fcfs(process_list):
-	##Time
+	# Time
 	i=0
 	ready_queue = Queue()
+	completed_processes = []
+	context = avg_wait = avg_turn = avg_burst = preemption = 0
 
 	print("time {}ms: Simulator started for FCFS {}".format(i,ready_queue))
 
-	##Nothing on CPU to begin with
+	# Nothing on CPU to begin with
 	cpu = CPU_Burst()
-
 	context_switch = False
 
 	while(1):
-		##Number of processes
+		
+		# Number of processes
 		processes_complete = 0
 		for j in process_list:
 
-			##First time seen
+			# First time seen
 			if(i == j.get_arrival_t0()):
 				ready_queue.enqueue(j)
 				print("time {}ms: Process {} arrived and added to ready queue {}".format(i,j,ready_queue))
-			##Any other time
+			
+			# Any other time
 			elif(i == j.get_arrival_t() and j.get_num_bursts()>0):
 				print("time {}ms: Process {} completed I/O; added to ready queue {}".format(i,j,ready_queue))
 				ready_queue.enqueue(j)
 
-			##If a processes has finished all of its bursts mark it as complete
+			# If a processes has finished all of its bursts mark it as complete
 			if(j.get_num_bursts() == 0):
 				processes_complete += 1
-		##If CPU is ready to accept a process
+		
+		# If CPU is ready to accept a process
 		if(cpu.ready(i)):
-			##Get current process running in CPU (if it exists)
+			
+			# Get current process running in CPU (if it exists)
 			current_process = cpu.get_current_cpu_process()
 			if(current_process != None):
 				if(current_process.get_num_bursts() == 0):
 					print("time {}ms: Process {} terminated {}".format(i,current_process,ready_queue))
 					context_switch = True
+					context+=1
 					i += 4
 				else:
 					print("time {}ms: Process {} completed a CPU burst; {} bursts to go {}".format(i,current_process,current_process.get_num_bursts(),ready_queue))
-					##Process with I/O time plus context switch
-					##Modify arrival time to account for I/O plus context switch
+					
+					# Process with I/O time plus context switch
+					# Modify arrival time to account for I/O plus context switch
 					i_o_t = i + 4 + current_process.get_io_t()
 					print("time {}ms: Process {} switching out of CPU; will block on I/O until time {}ms {}".format(i,current_process,i_o_t,ready_queue))
 					current_process.set_arrival_t(i_o_t)
 					context_switch = True
+					context+=1
 					i += 4
 					
 				
@@ -204,7 +219,7 @@ def fcfs(process_list):
 				print("time {}ms: Simulation ended for FCFS".format(i))
 				break
 
-			##Queue still has processes
+			# Queue still has processes
 			if(ready_queue.isEmpty() == False):
 				##Get the first process on the queue
 				new_process = ready_queue.dequeue()
@@ -212,6 +227,7 @@ def fcfs(process_list):
 				#Context switch
 				context_switch = True
 				i += 4
+				context+=1
 
 				##Put it into the CPU
 				cpu.set_cpu(new_process,i,None)
@@ -220,6 +236,7 @@ def fcfs(process_list):
 				##Decriment number of bursts remaining for process
 				new_process.burst_complete()
 				# continue
+				
 			else:
 				##CPU is idle
 				cpu.set_cpu(None,None,None)
@@ -227,6 +244,14 @@ def fcfs(process_list):
 			i+=1
 		else:
 			context_switch = False
+
+	# Calulate stats
+	for process in completed_processes:
+		avg_wait+=process.get_wait_time()
+		avg_burst+=process.get_cpu_t()
+		avg_turn+=process.get_wait_time()+process.get_cpu_t()
+	
+	return [float(avg_burst),float(avg_wait),float(avg_turn),context,preemption] 
 
 def rr(process_list):
 	##Time
