@@ -277,12 +277,18 @@ def rr(process_list):
 	##we can break (assuming the last process on the cpu is done (i.e. cpu is ready)))
 	processes_complete = 0
 	ready_queue = Queue()
-	preemption = num_cs = 0 # where the STATS are going to be initialized. 
+	avg_cpu = preemption = num_cs = 0 # where the STATS are going to be initialized. 
 	print("time {}ms: Simulator started for RR {}".format(i,ready_queue))
-
 	##Nothing on CPU to begin with
 	cpu = CPU_Burst()
-
+	# Calculate some stats we can here 
+	temp = 0 
+	for process in process_list: 
+		avg_cpu += process.get_cpu_t() * process.get_num_bursts()
+		print(avg_cpu)
+	avg_cpu /= len(process_list)
+	# end calculating of some stats. 
+	
 	context_switch = False
 	while(1):
 		##We want to reset the counter to i each time, because when there is a context switch
@@ -303,7 +309,7 @@ def rr(process_list):
 					##if it was preempted by timeslice
 					if(not ready_queue.isEmpty()):
 						new_time = current_process.get_cpu_t() - t_slice
-						print(("time {:d}ms: Time slice expired; process {} preempted with {:d}ms to go {}").format(counter, current_process, new_time, ready_queue))
+						# print(("time {:d}ms: Time slice expired; process {} preempted with {:d}ms to go {}").format(counter, current_process, new_time, ready_queue))
 						cpu.set_cpu(None,None,None)
 						print(("time {:d}ms: Time slice expired; process {} preempted with {:d}ms to go {}").format(i, current_process, new_time, ready_queue))
 						#!
@@ -369,7 +375,7 @@ def rr(process_list):
 				##CPU is idle
 				cpu.set_cpu(None,None,None)
 		if(not context_switch):
-			counter+=1
+			counter+=1 
 		else:
 			context_switch = False
 			num_cs +=1 
@@ -378,11 +384,13 @@ def rr(process_list):
 		
 		# loops to help calculate stats 
 		for itr in range(len(process_list)):
-			if i > process_list[itr].get_arrival_t0: # meaning it has arrived 
+			if i > process_list[itr].get_arrival_t0(): # meaning it has arrived 
 				if process_list[itr] != current_process: # self-explanatory
 					if process_list[itr].get_arrival_t() != process_list[itr].get_arrival_t0() and i > process_list[itr].get_arrival_t():
 						# I think this last if statement is the case for checking if it's not in IO time? 
 						process_list[itr].increase_wait_time()
 	# area to calculate and return stats 	
-	stats = [num_cs, preemption]
-	return 
+	
+	
+	stats = [avg_cpu, num_cs, preemption]
+	return stats
