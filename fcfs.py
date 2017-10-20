@@ -360,5 +360,14 @@ def rr(process_list):
 		else:
 			num_cs +=1 
 			context_switch = False
+		
+		# loops to help calculate stats 
+		for itr in range(len(process_list)):
+			if i > process_list[itr].get_arrival_t0: # meaning it has arrived 
+				if process_list[itr] != current_process: # self-explanatory
+					if process_list[itr].get_arrival_t() != process_list[itr].get_arrival_t0() and i > process_list[itr].get_arrival_t():
+						# I think this last if statement is the case for checking if it's not in IO time? 
+						process_list[itr].increase_wait_time()
+	# area to calculate and return stats 	
 	stats = [num_cs, preemption]
 	return 
