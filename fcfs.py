@@ -267,14 +267,13 @@ def rr(process_list):
 	t_slice = 70
 	processes_complete = 0
 	ready_queue = Queue()
-
+	preemption = num_cs = 0 # where the STATS are going to be initialized. 
 	print("time {}ms: Simulator started for RR {}".format(i,ready_queue))
 
 	##Nothing on CPU to begin with
 	cpu = CPU_Burst()
 
 	context_switch = False
-	k=0
 	while(1):
 		counter = i
 		if((cpu.ready_rr(i) == 0) or (cpu.ready_rr(i) == 1) or (cpu.ready_rr(i) == 2)):
@@ -292,6 +291,9 @@ def rr(process_list):
 						new_time = current_process.get_cpu_t() - t_slice
 						print(("time {:d}ms: Time slice expired; process {} preempted with {:d}ms to go {}").format(counter, current_process, new_time, ready_queue))
 						cpu.set_cpu(None,None,None)
+						print(("time {:d}ms: Time slice expired; process {} preempted with {:d}ms to go {}").format(i, current_process, new_time, ready_queue))
+						#!
+						preemption += 1
 						current_process.set_cpu_t(new_time)
 						ready_queue.enqueue(current_process)
 						context_switch = True
@@ -356,5 +358,17 @@ def rr(process_list):
 			counter+=1
 		else:
 			context_switch = False
+			num_cs +=1 
 		i+=1
-		k+=1
+
+		
+		# loops to help calculate stats 
+		for itr in range(len(process_list)):
+			if i > process_list[itr].get_arrival_t0: # meaning it has arrived 
+				if process_list[itr] != current_process: # self-explanatory
+					if process_list[itr].get_arrival_t() != process_list[itr].get_arrival_t0() and i > process_list[itr].get_arrival_t():
+						# I think this last if statement is the case for checking if it's not in IO time? 
+						process_list[itr].increase_wait_time()
+	# area to calculate and return stats 	
+	stats = [num_cs, preemption]
+	return 
