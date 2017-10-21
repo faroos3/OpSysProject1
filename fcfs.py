@@ -236,7 +236,7 @@ def fcfs(process_list):
 				print("time {}ms: Process {} arrived and added to ready queue {}".format(i,j,ready_queue))
 			elif(context_switch and ((i-4) == j.get_arrival_t0())):
 				ready_queue.enqueue(j)
-				print("time {}ms: Process {} completed I/O; added to ready queue {}".format(i-4,j,ready_queue))
+				print("time {}ms: Process {} arrived and added to ready queue {}".format(i-4,j,ready_queue))
 		# If CPU is ready to accept a process
 		if(cpu.ready(i) or (cpu.ready(i-4) and context_switch)):
 			# Queue still has processes
