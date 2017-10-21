@@ -22,7 +22,7 @@ def increase_wait_time(queue):
 		(process[1]).increase_wait_time()
 
 
-def srt(process_list):	
+def srt(processes_list):	
 	process_list.sort(key=lambda x: x.get_process_id())
 	t = 0    				# time in ms
 	t_cs = 8 				# time to perform context switch
@@ -34,12 +34,15 @@ def srt(process_list):
 	completed_processes = []
 	preempt = context_switch = finished = replace = False  # check for context switch and completion
 
-	# turnaround time = arrivaltime + t
-	context = avg_wait = avg_turn = avg_burst = preemption = 0
+	context = avg_wait = avg_turn = avg_burst = total_bursts = preemption = 0
+	for process in processes_list:
+		total_bursts+=process.get_num_bursts()
+		avg_burst+=process.get_cpu_t()*process.get_num_bursts()
 
 	print("time 0ms: Simulator started for SRT [Q <empty>]")
 	while(finished != True):
 		
+
 		'''
 		If the current process has finised it's burst check if it has remaining bursts
 		add it to the IO List and set the CPU up to take a new process. If not, mark
@@ -148,7 +151,7 @@ def srt(process_list):
 					heapq.heappush(ready_queue,[(process.get_cpu_t(),str(process)),process])
 					context_switch = True
 					print("time {}ms: Process {} arrived and added to ready queue {}".format(t,process,format_queue(ready_queue)))
-
+		
 		# Start a process if the CPU is open
 		if ready == True and len(ready_queue) > 0:
 			ready = False
@@ -163,12 +166,9 @@ def srt(process_list):
 				new_time+= 4
 			current_process = queued_process[1]
 			if queued_process[0][0] < queued_process[1].get_cpu_t():
-				print("time {}ms: Process {} started using the CPU with {}ms remaining {}".format(new_time,current_process,queued_process[0],format_queue(ready_queue)))
+				print("time {}ms: Process {} started using the CPU with {}ms remaining {}".format(new_time,current_process,queued_process[0][0],format_queue(ready_queue)))
 			else:
 				print("time {}ms: Process {} started using the CPU {}".format(new_time,current_process,format_queue(ready_queue)))
-
-		# Increase the wait time of all processes in the queue
-		increase_wait_time(ready_queue)
 
 		# Exit when all processes are complete (No mory CPU Bursts or IO Operations)
 		if len(process_list) == len(completed_processes):
@@ -178,22 +178,23 @@ def srt(process_list):
 		# Increment time normally if a context switch didn't occur
 		if replace == True:
 			t+=t_cs
+			context+=0.5
 			replace = False
 		elif context_switch == True:
 			t+=4 # about to switch to new process
+			context+=0.5
 			context_switch = False
 		else:
 			t+=1
-
-
+		# Increase the wait time of all processes in the queue
+		increase_wait_time(ready_queue)
 	print("time {}ms: Simulator ended for SRT".format(t))
 
 	# Calulate stats
-	for process in completed_processes:
-		avg_burst+=process.get_cpu_t()
+	for process in processes_list:
 		avg_wait+=process.get_wait_time()
-		avg_turn+=(process.get_end_t() - process.get_arrival_t() - (process.get_io_t() * 4) - process.get_wait_time())
-	return [float(avg_burst)/len(process_list),float(avg_wait)/len(process_list),float(avg_turn)/len(process_list),context,preemption] 
+		avg_turn+=(process.get_end_t() - process.get_arrival_t())
+	return [float(avg_burst)/(total_bursts),float(avg_wait)/total_bursts,float(avg_turn)/len(process_list),context,preemption] 
 
 if __name__ == '__main__':
 	

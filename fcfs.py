@@ -403,4 +403,4 @@ def rr(process_list):
 						# I think this last if statement is the case for checking if it's not in IO time? 
 						process_list[itr].increase_wait_time()
 	# area to calculate and return stats 	
-	return [float(0.0),float(0.0),float(0.0),float(0.0),0.0] 
+	return [float(0.0),float(0.0),float(0.0),float(0.0),0.0]
