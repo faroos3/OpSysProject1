@@ -24,7 +24,6 @@ def increase_wait_time(queue):
 
 def srt(process_list):	
 	process_list.sort(key=lambda x: x.get_process_id())
-	print(process_list)
 	t = 0    				# time in ms
 	t_cs = 8 				# time to perform context switch
 	IO_list = {} 			# { {time process's IO will finish : process} }

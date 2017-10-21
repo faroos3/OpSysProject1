@@ -168,14 +168,27 @@ def fcfs(process_list):
 	ready_queue = Queue()
 	processes_complete = 0
 	added = False
-	completed_processes = []
-	context = avg_wait = avg_turn = avg_burst = preemption = 0
+	context = avg_turn = avg_burst = preemption = 0
 
 	print("time {}ms: Simulator started for FCFS {}".format(i,ready_queue))
 
 	# Nothing on CPU to begin with
 	cpu = CPU_Burst()
 	context_switch = False
+
+	###Avg Burst Time
+	total_burst_time = total_num_bursts = 0
+	for process in process_list:
+		total_burst_time+= process.get_num_bursts() * process.get_cpu_t0()
+		total_num_bursts+= process.get_num_bursts()
+	avg_burst = total_burst_time/total_num_bursts
+
+
+	###Total wait Time
+	wait_time=0
+
+	###Total number of context switches
+	total_context = 0
 
 	while(1):
 		# If CPU is ready to accept a process
@@ -209,6 +222,7 @@ def fcfs(process_list):
 				# Number of processes
 
 		for j in process_list:
+			##Time added to ready queue
 			# Any other time
 			if(i == j.get_arrival_t() and j.get_arrival_t() != j.get_arrival_t0()):
 				ready_queue.enqueue(j)
@@ -220,7 +234,6 @@ def fcfs(process_list):
 			elif(i == j.get_arrival_t0()):
 				ready_queue.enqueue(j)
 				print("time {}ms: Process {} arrived and added to ready queue {}".format(i,j,ready_queue))
-				j.setAdded(True)
 			elif(context_switch and ((i-4) == j.get_arrival_t0())):
 				ready_queue.enqueue(j)
 				print("time {}ms: Process {} completed I/O; added to ready queue {}".format(i-4,j,ready_queue))
@@ -239,6 +252,7 @@ def fcfs(process_list):
 				##Put it into the CPU
 				cpu.set_cpu(new_process,i,None)
 
+				wait_time+= i - new_process.get_arrival_t() + 4
 				print("time {}ms: Process {} started using the CPU {}".format(i,new_process,ready_queue))
 				##Decriment number of bursts remaining for process
 				new_process.burst_complete()
@@ -250,15 +264,14 @@ def fcfs(process_list):
 		if(context_switch != True):
 			i+=1
 		else:
+			total_context+= 1
 			context_switch = False
 
-	# Calulate stats
-	for process in completed_processes:
-		avg_wait+=process.get_wait_time()
-		avg_burst+=process.get_cpu_t()
-		avg_turn+=process.get_wait_time()+process.get_cpu_t()
-	
-	return [float(avg_burst),float(avg_wait),float(avg_turn),context,preemption] 
+
+	avg_wait_time = wait_time/total_num_bursts
+	avg_turnaround_time = avg_wait_time + avg_burst
+
+	return [float(avg_burst),float(avg_wait_time),float(avg_turnaround_time),float(total_context),0.0] 
 
 def rr(process_list):
 	##Time
@@ -360,7 +373,7 @@ def rr(process_list):
 				##Get the first process on the queue
 				new_process = ready_queue.dequeue()
 				#Context switch
-				# context_switch = True
+				context_switch = True
 				counter += 4
 				cpu.set_cpu(new_process,counter,t_slice)
 
@@ -390,7 +403,4 @@ def rr(process_list):
 						# I think this last if statement is the case for checking if it's not in IO time? 
 						process_list[itr].increase_wait_time()
 	# area to calculate and return stats 	
-	
-	
-	stats = [avg_cpu, num_cs, preemption]
-	return stats
+	return [float(0.0),float(0.0),float(0.0),float(0.0),0.0] 

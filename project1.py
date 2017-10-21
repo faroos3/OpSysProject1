@@ -62,13 +62,13 @@ if __name__ == '__main__':
 		# Call each algorithm and report the stats
 		fcfs = fcfs(process_list)
 		print("")
-		# srt = srt(process_list1)
+		srt = srt(process_list1)
 		print("")
 		rr = rr(process_list2)
 		filename = sys.argv[2]
 		with open(filename,'w') as f:
-			f.write("1")
-		print(rr)
+			f.write(str(rr))
+		# print(rr)
 		# print_stats(fcfs(process_list), "FCFS")
 		# print_stats(srt,"SRT")
 		
