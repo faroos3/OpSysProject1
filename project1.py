@@ -8,7 +8,7 @@ The three algorithms implemented are First Come First Serve, Shortest Remaining 
 
 import sys 
 from fcfs import *
-from rr import rr
+from rr import *
 from srt import srt
 
 # This function will get all the arguments in the filename. 
