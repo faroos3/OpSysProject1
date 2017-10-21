@@ -272,4 +272,4 @@ def fcfs(process_list):
 	avg_wait_with_context = wait_with_context/total_num_bursts
 	avg_turnaround_time = avg_wait_with_context + avg_burst
 
-	return [float(avg_burst),float(avg_wait_time),float(avg_turnaround_time),float(total_context),0.0]
+	return [float(avg_burst),float(avg_wait_time),float(avg_turnaround_time),float(total_context),0]
