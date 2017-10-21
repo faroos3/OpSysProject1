@@ -360,7 +360,7 @@ def rr(process_list):
 				##Get the first process on the queue
 				new_process = ready_queue.dequeue()
 				#Context switch
-				# context_switch = True
+				context_switch = True
 				counter += 4
 				cpu.set_cpu(new_process,counter,t_slice)
 
@@ -392,5 +392,5 @@ def rr(process_list):
 	# area to calculate and return stats 	
 	
 	
-	stats = [avg_cpu, num_cs, preemption]
+	stats = [avg_cpu,0,0, num_cs, preemption]
 	return stats
