@@ -23,7 +23,7 @@ def increase_wait_time(queue):
 
 
 def srt(processes_list):	
-	process_list.sort(key=lambda x: x.get_process_id())
+	processes_list.sort(key=lambda x: x.get_process_id())
 	t = 0    				# time in ms
 	t_cs = 8 				# time to perform context switch
 	IO_list = {} 			# { {time process's IO will finish : process} }
@@ -118,7 +118,7 @@ def srt(processes_list):
 		Check if a a processed arrived, then check for preemption
 		or add it to the queue
 		'''
-		for process in process_list:
+		for process in processes_list:
 
 			if(t == process.get_arrival_t()):
 				'''
@@ -171,7 +171,7 @@ def srt(processes_list):
 				print("time {}ms: Process {} started using the CPU {}".format(new_time,current_process,format_queue(ready_queue)))
 
 		# Exit when all processes are complete (No mory CPU Bursts or IO Operations)
-		if len(process_list) == len(completed_processes):
+		if len(processes_list) == len(completed_processes):
 			context_switch = True # account for final exit from CPU
 			finished = True
 
@@ -194,7 +194,7 @@ def srt(processes_list):
 	for process in processes_list:
 		avg_wait+=process.get_wait_time()
 		avg_turn+=(process.get_end_t() - process.get_arrival_t())
-	return [float(avg_burst)/(total_bursts),float(avg_wait)/total_bursts,float(avg_turn)/len(process_list),context,preemption] 
+	return [float(avg_burst)/(total_bursts),float(avg_wait)/total_bursts,float(avg_turn)/len(processes_list),context,preemption] 
 
 if __name__ == '__main__':
 	

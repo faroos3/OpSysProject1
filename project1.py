@@ -67,7 +67,6 @@ if __name__ == '__main__':
 		rr = rr(process_list2)
 		filename = sys.argv[2]
 		with open(filename,'w') as f:
-			f.write(str(rr))
 			f.write("Algorithm FCFS\n")
 			f.write("-- average CPU burst time: {:.2f}".format(fcfs[0])+ "ms\n")
 			f.write("-- average wait time: {:.2f}".format(fcfs[1])+ "ms\n")
