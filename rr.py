@@ -54,6 +54,11 @@ class Process(object):
 		self.process_end_t = -1
 		self.wait_time = 0
 		self.added = False
+		self.final_end_time = 0
+	def set_final_end_time(self, time):
+		self.final_end_time = time
+	def get_final_end_time(self):
+		return self.final_end_time
 
 	def get_process_id(self):
 		return self.process_id
@@ -103,7 +108,6 @@ class Process(object):
 
 	def get_cpu_t0(self):
 		return self.cpu_t0
-
 
 	def wasAdded(self):
 		return self.added
@@ -163,7 +167,15 @@ class CPU_Burst(object):
 def rr(process_list):
 	##Time
 	i=0
-	
+	original_bursts = [process.get_num_bursts() for process in process_list]
+	total_bursts = sum(original_bursts)
+	# 
+	total_burst_time = total_num_bursts = 0
+	for process in process_list:
+		total_burst_time+= process.get_num_bursts() * process.get_cpu_t0()
+		total_num_bursts+= process.get_num_bursts()
+	wait_time = wait_with_context=avg_burst = total_burst_time/total_num_bursts
+	# 
 	##This will be used to "block" anything from executing on the cpu
 	## when a context_switch has been initiated
 	##This was needed because suppose process A finishes a timeslice at time t=0, triggering a context_switch 
@@ -177,7 +189,7 @@ def rr(process_list):
 	##we can break (assuming the last process on the cpu is done (i.e. cpu is ready)))
 	processes_complete = 0
 	ready_queue = Queue()
-	avg_cpu = preemption = num_cs = 0 # where the STATS are going to be initialized. 
+	avg_wait = avg_turn = avg_cpu = preemption = num_cs = 0 # where the STATS are going to be initialized. 
 	print("time {}ms: Simulator started for RR {}".format(i,ready_queue))
 	##Nothing on CPU to begin with
 	cpu = CPU_Burst()
@@ -202,6 +214,7 @@ def rr(process_list):
 				## to account for context switch
 				if((current_process.get_num_bursts() == 0) and (cpu.ready_rr(i) == 2)):
 					print("time {}ms: Process {} terminated {}".format(counter,current_process,ready_queue))
+					current_process.set_final_end_time(counter)
 					processes_complete += 1
 					context_switch = True
 					counter+= 4
@@ -262,6 +275,8 @@ def rr(process_list):
 				#Context switch
 				context_switch = True
 				counter += 4
+				wait_time+= counter - new_process.get_arrival_t()-4
+				wait_with_context+= counter - new_process.get_arrival_t()+4
 				cpu.set_cpu(new_process,counter,t_slice)
 
 				##Decriment number of bursts remaining for process
@@ -284,10 +299,20 @@ def rr(process_list):
 		
 		# loops to help calculate stats 
 		for itr in range(len(process_list)):
-			if i > process_list[itr].get_arrival_t0(): # meaning it has arrived 
+			if counter >= process_list[itr].get_arrival_t0(): # meaning it has arrived 
 				if process_list[itr] != current_process: # self-explanatory
-					if process_list[itr].get_arrival_t() != process_list[itr].get_arrival_t0() and i > process_list[itr].get_arrival_t():
+					if process_list[itr].get_arrival_t() != process_list[itr].get_arrival_t0() and counter > process_list[itr].get_arrival_t():
 						# I think this last if statement is the case for checking if it's not in IO time? 
 						process_list[itr].increase_wait_time()
 	# area to calculate and return stats 	
-	return [float(0.0),float(0.0),float(0.0),float(0.0),0.0]
+	for itr in range(len(process_list)):
+		possible_turn = process_list[itr].get_final_end_time() - process_list[itr].get_arrival_t0()
+		possible_turn -= original_bursts[itr] * process_list[itr].get_io_t()
+		avg_turn += possible_turn
+		avg_wait += process_list[itr].get_wait_time()
+	avg_wait /= total_bursts
+	#avg_wait = wait_time/total_bursts
+	avg_wait_context = wait_with_context/total_bursts
+	avg_turn += avg_wait_context + avg_burst
+	# 
+	return [float(avg_burst),float(avg_wait),float(avg_turn),num_cs,preemption]
