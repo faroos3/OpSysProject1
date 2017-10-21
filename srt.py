@@ -31,6 +31,7 @@ def srt(process_list):
 	current_process = None
 	completed_processes = []
 	preempt = context_switch = finished = False  # check for context switch and completion
+	replace = False
 
 	# turnaround time = arrivaltime + t
 	context = avg_wait = avg_turn = avg_burst = preemption = 0
@@ -45,47 +46,44 @@ def srt(process_list):
 		'''
 		if t != 0 and t == burst_end_time:
 			current_process.burst_complete() # Decrement the number of bursts
+			return_time = t+current_process.get_io_t()+4 # IO end time
 
 			# Send process to complete IO
 			if current_process.get_num_bursts() > 0:
-				IO_list[t+current_process.get_io_t()+4] = current_process
+				IO_list[return_time] = current_process
 				if current_process.get_num_bursts() == 1:
 					print("time {}ms: Process {} completed a CPU burst; {} burst to go {}".format(t,current_process,current_process.get_num_bursts(),format_queue(ready_queue)))
 				else:
 					print("time {}ms: Process {} completed a CPU burst; {} bursts to go {}".format(t,current_process,current_process.get_num_bursts(),format_queue(ready_queue)))
-				print("time {}ms: Process {} switching out of CPU; will block on I/O until time {}ms {}".format(t,current_process,t+current_process.get_io_t()+4,
+				print("time {}ms: Process {} switching out of CPU; will block on I/O until time {}ms {}".format(t,current_process,return_time,
 				format_queue(ready_queue)))
 
-				# Mark the CPU as open
-				context_switch=True
-				context+=1
-				ready = True
-				burst_end_time = 0
-				current_process = None
-
 			else:
-
-				# Mark the process as completed and start a new one
+				
+				# Mark the process as completed
 				process.set_end_t(t)
 				completed_processes.append(current_process)
 				print("time {}ms: Process {} terminated {}".format(t,current_process,format_queue(ready_queue)))
-				context_switch=True
-				context+=1
-				ready = True
-				burst_end_time = 0
-				current_process = None		
+				
+			if len(ready_queue) != 0:
+				replace = True
+			ready = True
+			burst_end_time = 0
+			current_process = None
+
 		'''
 		Check if a processes finished their IO, if it did, check if
 		any bursts are left. If bursts are left, check for preemption
 		or add it to the queue, if not mark it as finished.
 		'''
+
 		for key in IO_list:
-		
 			if key == t:
 				process = IO_list[key]
 
 				# Check if process terminated
 				if process.get_num_bursts() == 0:
+					context_switch = True
 					print("time {}ms: Process {} terminated {}".format(t,process,format_queue(ready_queue)))
 					process.set_end_t(t)
 					completed_processes.append(process)
@@ -96,11 +94,7 @@ def srt(process_list):
 					if process.get_cpu_t() < (burst_end_time - t):
 
 						print("time {}ms: Process {} completed I/O and will preempt {} {}".format(t,process,current_process,format_queue(ready_queue)))
-						if current_process == None:
-							heapq.heappush(ready_queue,[burst_end_time-t+4, current_process])
-						else:
-							heapq.heappush(ready_queue,[burst_end_time-t+t_cs, current_process])
-						context+=1
+						heapq.heappush(ready_queue,[burst_end_time-t+t_cs, current_process])
 						preemption+=1
 
 						# Mark the CPU as open
@@ -109,7 +103,7 @@ def srt(process_list):
 						current_process = None
 
 					else:
-
+						context_switch = True
 						heapq.heappush(ready_queue,[process.get_cpu_t(), process])
 						print("time {}ms: Process {} completed I/O; added to ready queue {}".format(t,process,format_queue(ready_queue)))
 
@@ -127,11 +121,13 @@ def srt(process_list):
 				if (process.get_cpu_t() < (burst_end_time - t)) or (process.get_cpu_t() == (burst_end_time - t) and (str(process) < str(current_process))):
 					print("time {}ms: Process {} arrived and will preempt {} {}".format(t,process,current_process,format_queue(ready_queue)))
 
+					if len(ready_queue) != 0:
+						replace = True
+
 					# Add the current process back to the queue with it's remaining time
 					heapq.heappush(ready_queue,[burst_end_time - t, current_process]) 
 
 					# Set the process as the new current process
-					context+=1
 					preemption+=1
 					context_switch =True
 					
@@ -144,49 +140,42 @@ def srt(process_list):
 
 					# Add the process to the queue if there is no preemption
 					heapq.heappush(ready_queue,[process.get_cpu_t(),process])
+					context_switch = True
 					print("time {}ms: Process {} arrived and added to ready queue {}".format(t,process,format_queue(ready_queue)))
-
-		'''
-		Check for preemption by objects in the queue
-		'''
-		# for i in range(len(ready_queue)):
-		# 	if ready_queue[i][0] < (burst_end_time - t):
-		# 		heapq.heappush(ready_queue, [burst_end_time - t, current_process])
-		# 		ready = True
-		# 		burst_end_time = 0
-		# 		current_process = None
 
 		# Start a process if the CPU is open
 		if ready == True and len(ready_queue) > 0:
-			context+=1
-			context_switch = True
 			ready = False
+			context_switch = True
 			queued_process = heapq.heappop(ready_queue)
-			if current_process == None:
-				burst_end_time = queued_process[0]+t+4
+			new_time = t
+			if replace == True:
+				burst_end_time = queued_process[0]+t+t_cs # context switch for taking off queue
+				new_time +=t_cs
 			else:
-				burst_end_time = queued_process[0]+t+t_cs
+				burst_end_time = queued_process[0]+t+4 # context switch for taking off queue
+				new_time+= 4
 			current_process = queued_process[1]
 			if queued_process[0] < queued_process[1].get_cpu_t():
-				print("time {}ms: Process {} started using the CPU with {}ms remaining {}".format(t+4,current_process,queued_process[0],format_queue(ready_queue)))
+				print("time {}ms: Process {} started using the CPU with {}ms remaining {}".format(new_time,current_process,queued_process[0],format_queue(ready_queue)))
 			else:
-				print("time {}ms: Process {} started using the CPU {}".format(t+4,current_process,format_queue(ready_queue)))
+				print("time {}ms: Process {} started using the CPU {}".format(new_time,current_process,format_queue(ready_queue)))
 
 		# Increase the wait time of all processes in the queue
-		increase_wait_time(ready_queue)
+		# increase_wait_time(ready_queue)
 
 		# Exit when all processes are complete (No mory CPU Bursts or IO Operations)
 		if len(process_list) == len(completed_processes):
-			t+=4 # account for final queue exit
+			t+=4 # account for final exit from CPU
+			context_switch = True
 			finished = True
 
 		# Increment time normally if a context switch didn't occur
-		if context_switch == True:
-			if preempt == True:
-				t+=t_cs
-				preempt = False
-			else:
-				t+=4 # about to switch to new process
+		if replace == True:
+			t+=t_cs
+			replace = False
+		elif context == True:
+			t+=4 # about to switch to new process
 			context_switch = False
 		else:
 			t+=1
@@ -210,7 +199,7 @@ if __name__ == '__main__':
 	# 	Process('D',250,1770,2,822)
 	# ])
 
-	# Input 2
+	# Input 2 WORKING
 	# process_list = list([
 	# 	Process('X',0,80,5,500)
 	# ])
