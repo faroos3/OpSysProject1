@@ -50,6 +50,7 @@ def srt(process_list):
 
 			# Send process to complete IO
 			if current_process.get_num_bursts() > 0:
+				replace = True
 				IO_list[return_time] = current_process
 				if current_process.get_num_bursts() == 1:
 					print("time {}ms: Process {} completed a CPU burst; {} burst to go {}".format(t,current_process,current_process.get_num_bursts(),format_queue(ready_queue)))
@@ -90,6 +91,7 @@ def srt(process_list):
 				else:
 
 					# Check for preemption 
+					IO = True
 					context_switch = True
 					if process.get_cpu_t() < (burst_end_time - t):
 
