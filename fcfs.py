@@ -263,23 +263,43 @@ def fcfs(process_list):
 def rr(process_list):
 	##Time
 	i=0
+	
+	##This will be used to "block" anything from executing on the cpu
+	## when a context_switch has been initiated
+	##This was needed because suppose process A finishes a timeslice at time t=0, triggering a context_switch 
+	## In the original simulation, i would increment by 4, skipping over any process that arrives
+	## between t=0 and t=4
+	##To solve this problem i will increment by 1 each time and the counter will be used to adjust cpu
+	## start times and i/o times where applicable
 	counter = 0
 	t_slice = 70
+	##When the number of processes complete is equal to that of the number of processes
+	##we can break (assuming the last process on the cpu is done (i.e. cpu is ready)))
 	processes_complete = 0
 	ready_queue = Queue()
-	preemption = num_cs = 0 # where the STATS are going to be initialized. 
+	avg_cpu = preemption = num_cs = 0 # where the STATS are going to be initialized. 
 	print("time {}ms: Simulator started for RR {}".format(i,ready_queue))
-
 	##Nothing on CPU to begin with
 	cpu = CPU_Burst()
-
+	# Calculate some stats we can here 
+	temp = 0 
+	for process in process_list: 
+		avg_cpu += process.get_cpu_t() * process.get_num_bursts()
+		print(avg_cpu)
+	avg_cpu /= len(process_list)
+	# end calculating of some stats. 
+	
 	context_switch = False
 	while(1):
+		##We want to reset the counter to i each time, because when there is a context switch
+		##i is being incremented by 4
 		counter = i
 		if((cpu.ready_rr(i) == 0) or (cpu.ready_rr(i) == 1) or (cpu.ready_rr(i) == 2)):
 			##Get current process running in CPU (if it exists)
 			current_process = cpu.get_current_cpu_process()
 			if(current_process != None):
+				##Process terminated (increment processes_complete) and increment the counter
+				## to account for context switch
 				if((current_process.get_num_bursts() == 0) and (cpu.ready_rr(i) == 2)):
 					print("time {}ms: Process {} terminated {}".format(counter,current_process,ready_queue))
 					processes_complete += 1
@@ -289,7 +309,7 @@ def rr(process_list):
 					##if it was preempted by timeslice
 					if(not ready_queue.isEmpty()):
 						new_time = current_process.get_cpu_t() - t_slice
-						print(("time {:d}ms: Time slice expired; process {} preempted with {:d}ms to go {}").format(counter, current_process, new_time, ready_queue))
+						# print(("time {:d}ms: Time slice expired; process {} preempted with {:d}ms to go {}").format(counter, current_process, new_time, ready_queue))
 						cpu.set_cpu(None,None,None)
 						print(("time {:d}ms: Time slice expired; process {} preempted with {:d}ms to go {}").format(i, current_process, new_time, ready_queue))
 						#!
@@ -326,11 +346,11 @@ def rr(process_list):
 				break
 		for j in process_list:
 
-			##First time seen
+			##First time seen (as in it came from process list)
 			if(i == j.get_arrival_t0()):
 				ready_queue.enqueue(j)
 				print("time {}ms: Process {} arrived and added to ready queue {}".format(i,j,ready_queue))
-			# ##Any other time
+			# ##Any other time (as in it came from)
 			elif(i == j.get_arrival_t()):
 				ready_queue.enqueue(j)
 				print("time {}ms: Process {} completed I/O; added to ready queue {}".format(i,j,ready_queue))
@@ -355,7 +375,7 @@ def rr(process_list):
 				##CPU is idle
 				cpu.set_cpu(None,None,None)
 		if(not context_switch):
-			counter+=1
+			counter+=1 
 		else:
 			context_switch = False
 			num_cs +=1 
@@ -364,11 +384,13 @@ def rr(process_list):
 		
 		# loops to help calculate stats 
 		for itr in range(len(process_list)):
-			if i > process_list[itr].get_arrival_t0: # meaning it has arrived 
+			if i > process_list[itr].get_arrival_t0(): # meaning it has arrived 
 				if process_list[itr] != current_process: # self-explanatory
 					if process_list[itr].get_arrival_t() != process_list[itr].get_arrival_t0() and i > process_list[itr].get_arrival_t():
 						# I think this last if statement is the case for checking if it's not in IO time? 
 						process_list[itr].increase_wait_time()
 	# area to calculate and return stats 	
-	stats = [num_cs, preemption]
-	return 
+	
+	
+	stats = [avg_cpu, num_cs, preemption]
+	return stats
