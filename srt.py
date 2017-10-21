@@ -4,6 +4,7 @@ import heapq
 
 # Format the queue for output
 def format_queue(queue):
+	queue.sort(key=lambda x: x[1].get_process_id())
 	output = "[Q"
 	if len(queue) == 0:
 		output += " <empty>]"
@@ -22,6 +23,8 @@ def increase_wait_time(queue):
 
 
 def srt(process_list):	
+	process_list.sort(key=lambda x: x.get_process_id())
+	print(process_list)
 	t = 0    				# time in ms
 	t_cs = 8 				# time to perform context switch
 	IO_list = {} 			# { {time process's IO will finish : process} }
@@ -30,8 +33,7 @@ def srt(process_list):
 	burst_end_time = 0 		# time the current process will finish it's burst
 	current_process = None
 	completed_processes = []
-	preempt = context_switch = finished = False  # check for context switch and completion
-	replace = False
+	preempt = context_switch = finished = replace = False  # check for context switch and completion
 
 	# turnaround time = arrivaltime + t
 	context = avg_wait = avg_turn = avg_burst = preemption = 0
@@ -94,9 +96,10 @@ def srt(process_list):
 					IO = True
 					context_switch = True
 					if process.get_cpu_t() < (burst_end_time - t):
-
+						replace = True
 						print("time {}ms: Process {} completed I/O and will preempt {} {}".format(t,process,current_process,format_queue(ready_queue)))
-						heapq.heappush(ready_queue,[burst_end_time-t+t_cs, current_process])
+						heapq.heappush(ready_queue,[(burst_end_time-t,str(current_process)), current_process])
+						heapq.heappush(ready_queue,[(process.get_cpu_t(),str(process)), process])
 						preemption+=1
 
 						# Mark the CPU as open
@@ -106,7 +109,7 @@ def srt(process_list):
 
 					else:
 						context_switch = True
-						heapq.heappush(ready_queue,[process.get_cpu_t(), process])
+						heapq.heappush(ready_queue,[(process.get_cpu_t(),str(process)), process])
 						print("time {}ms: Process {} completed I/O; added to ready queue {}".format(t,process,format_queue(ready_queue)))
 
 		'''
@@ -123,11 +126,13 @@ def srt(process_list):
 				if (process.get_cpu_t() < (burst_end_time - t)) or (process.get_cpu_t() == (burst_end_time - t) and (str(process) < str(current_process))):
 					print("time {}ms: Process {} arrived and will preempt {} {}".format(t,process,current_process,format_queue(ready_queue)))
 
-					if len(ready_queue) != 0:
-						replace = True
+					replace = True
 
 					# Add the current process back to the queue with it's remaining time
-					heapq.heappush(ready_queue,[burst_end_time - t, current_process]) 
+					heapq.heappush(ready_queue,[(burst_end_time - t,str(current_process)), current_process]) 
+
+					# Add the process to the queue if there is no preemption
+					heapq.heappush(ready_queue,[(process.get_cpu_t(),str(process)),process])
 
 					# Set the process as the new current process
 					preemption+=1
@@ -141,7 +146,7 @@ def srt(process_list):
 				else:
 
 					# Add the process to the queue if there is no preemption
-					heapq.heappush(ready_queue,[process.get_cpu_t(),process])
+					heapq.heappush(ready_queue,[(process.get_cpu_t(),str(process)),process])
 					context_switch = True
 					print("time {}ms: Process {} arrived and added to ready queue {}".format(t,process,format_queue(ready_queue)))
 
@@ -152,35 +157,35 @@ def srt(process_list):
 			queued_process = heapq.heappop(ready_queue)
 			new_time = t
 			if replace == True:
-				burst_end_time = queued_process[0]+t+t_cs # context switch for taking off queue
+				burst_end_time = queued_process[0][0]+t+t_cs # context switch for taking off queue
 				new_time +=t_cs
 			else:
-				burst_end_time = queued_process[0]+t+4 # context switch for taking off queue
+				burst_end_time = queued_process[0][0]+t+4 # context switch for taking off queue
 				new_time+= 4
 			current_process = queued_process[1]
-			if queued_process[0] < queued_process[1].get_cpu_t():
+			if queued_process[0][0] < queued_process[1].get_cpu_t():
 				print("time {}ms: Process {} started using the CPU with {}ms remaining {}".format(new_time,current_process,queued_process[0],format_queue(ready_queue)))
 			else:
 				print("time {}ms: Process {} started using the CPU {}".format(new_time,current_process,format_queue(ready_queue)))
 
 		# Increase the wait time of all processes in the queue
-		# increase_wait_time(ready_queue)
+		increase_wait_time(ready_queue)
 
 		# Exit when all processes are complete (No mory CPU Bursts or IO Operations)
 		if len(process_list) == len(completed_processes):
-			t+=4 # account for final exit from CPU
-			context_switch = True
+			context_switch = True # account for final exit from CPU
 			finished = True
 
 		# Increment time normally if a context switch didn't occur
 		if replace == True:
 			t+=t_cs
 			replace = False
-		elif context == True:
+		elif context_switch == True:
 			t+=4 # about to switch to new process
 			context_switch = False
 		else:
 			t+=1
+
 
 	print("time {}ms: Simulator ended for SRT".format(t))
 
@@ -188,36 +193,47 @@ def srt(process_list):
 	for process in completed_processes:
 		avg_burst+=process.get_cpu_t()
 		avg_wait+=process.get_wait_time()
-		avg_turn+= (process.get_end_t() - process.get_arrival_t() - (process.get_io_t() * 4) - process.get_wait_time())
+		avg_turn+=(process.get_end_t() - process.get_arrival_t() - (process.get_io_t() * 4) - process.get_wait_time())
 	return [float(avg_burst)/len(process_list),float(avg_wait)/len(process_list),float(avg_turn)/len(process_list),context,preemption] 
 
 if __name__ == '__main__':
 	
-	# Input 1
-	# process_list = list([
-	# 	Process('A',0,168,5,287),
-	# 	Process('B',0,385,1,0),
-	# 	Process('C',190,97,5,2499), 
-	# 	Process('D',250,1770,2,822)
-	# ])
+	# Input 1 WORKING
+	process_list = list([
+		Process('A',0,168,5,287),
+		Process('B',0,385,1,0),
+		Process('C',190,97,5,2499), 
+		Process('D',250,1770,2,822)
+	])
 
 	# Input 2 WORKING
 	# process_list = list([
 	# 	Process('X',0,80,5,500)
 	# ])
 
-	# Input 3
+	# Input 3 WORKING
 	# process_list = list([
 	# 	Process('X',0,560,5,20),
 	# 	Process('Y',0,840,5,20),
 	# 	Process('Z',0,924,5,20)
 	# ])
 
-	# Input 6
-	process_list = list([
-		Process("A",0,20,5,40),
-		Process("B",20,36,2,100),
-		Process("C",68,30,1,0)
-	])
+	# Input 4 WORKING
+	# process_list = list({
+	# 	Process('A',0,100,4,200),
+	# 	Process('B',0,101,4,200),
+	# 	Process('C',0,102,4,200),
+	# 	Process('X',0,103,4,200),
+	# 	Process('Y',0,104,4,200),
+	# 	Process('Z',0,105,4,200)
+	# })
+	# Input 5
 
-	srt(process_list)
+	# Input 6 WORKING
+	# process_list = list([
+	# 	Process("A",0,20,5,40),
+	# 	Process("B",20,36,2,100),
+	# 	Process("C",68,30,1,0)
+	# ])
+
+	print(srt(process_list))

@@ -113,7 +113,7 @@ class Process(object):
 
 	# Compare processes based on CPU burst time
 	def __lt__(self, other):
-		return self.get_cpu_t() < other.get_cpu_t()
+		return self.get_process_id() < other.get_process_id()
 
 	def __str__(self):
 		return self.process_id
