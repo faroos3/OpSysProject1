@@ -8,7 +8,7 @@ The three algorithms implemented are First Come First Serve, Shortest Remaining 
 
 import sys 
 from fcfs import *
-from fcfs import rr
+from rr import *
 from srt import srt
 
 # This function will get all the arguments in the filename. 
@@ -21,7 +21,7 @@ def get_instructions(file_name):
 			else:
 				split_line = line.split('|')
 				if (len(split_line) != 5):
-					print(("ERROR! {} does not have enough information...").format(split_line))
+					continue
 				else: 
 					split_line[-1] = split_line[-1].replace('\n', '')
 					for i in range(0, len(split_line)):
@@ -62,13 +62,30 @@ if __name__ == '__main__':
 		# Call each algorithm and report the stats
 		fcfs = fcfs(process_list)
 		print("")
-		# srt = srt(process_list1)
+		srt = srt(process_list1)
 		print("")
 		rr = rr(process_list2)
 		filename = sys.argv[2]
 		with open(filename,'w') as f:
-			f.write("1")
-		print(rr)
+			f.write("Algorithm FCFS\n")
+			f.write("-- average CPU burst time: {:.2f}".format(fcfs[0])+ " ms\n")
+			f.write("-- average wait time: {:.2f}".format(fcfs[1])+ " ms\n")
+			f.write("-- average turnaround time: {:.2f}".format(fcfs[2])+ " ms\n")
+			f.write("-- total number of context switches: {}".format(int(fcfs[3])) + "\n")
+			f.write("-- total number of preemptions: {}".format(int(fcfs[4])) + "\n")
+			f.write("Algorithm SRT\n")
+			f.write("-- average CPU burst time: {:.2f}".format(srt[0])+ " ms\n")
+			f.write("-- average wait time: {:.2f}".format(srt[1])+ " ms\n")
+			f.write("-- average turnaround time: {:.2f}".format(srt[2])+ " ms\n")
+			f.write("-- total number of context switches: {}".format(int(srt[3])) + "\n")
+			f.write("-- total number of preemptions: {}".format(int(srt[4])) + "\n")
+			f.write("Algorithm RR\n")
+			f.write("-- average CPU burst time: {:.2f}".format(rr[0])+ " ms\n")
+			f.write("-- average wait time: {:.2f}".format(rr[1])+ " ms\n")
+			f.write("-- average turnaround time: {:.2f}".format(rr[2])+ " ms\n")
+			f.write("-- total number of context switches: {}".format(int(rr[3])) + "\n")
+			f.write("-- total number of preemptions: {}".format(int(rr[4])) + "\n")
+		# print(rr)
 		# print_stats(fcfs(process_list), "FCFS")
 		# print_stats(srt,"SRT")
 		
