@@ -83,7 +83,7 @@ class Process(object):
 		return self.io_t
 	
 	def increase_wait_time(self): 
-		self.wait_time +=1 
+		self.wait_time += 1
 
 	def set_process_end_t(self,t):
 		self.process_end_t = t

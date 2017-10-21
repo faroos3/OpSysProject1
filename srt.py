@@ -16,11 +16,6 @@ def format_queue(queue):
 				output += " " + str(queue[i][1])
 	return output
 
-# While processes are in the queue, increase their wait time
-def increase_wait_time(queue):
-	for process in queue:
-		(process[1]).increase_wait_time()
-
 
 def srt(processes_list):	
 	process_list.sort(key=lambda x: x.get_process_id())
@@ -34,7 +29,7 @@ def srt(processes_list):
 	completed_processes = []
 	preempt = context_switch = finished = replace = False  # check for context switch and completion
 
-	context = avg_wait = avg_turn = avg_burst = total_bursts = preemption = 0
+	wait = context = avg_wait = avg_turn = avg_burst = total_bursts = preemption = 0
 	for process in processes_list:
 		total_bursts+=process.get_num_bursts()
 		avg_burst+=process.get_cpu_t()*process.get_num_bursts()
@@ -66,7 +61,7 @@ def srt(processes_list):
 			else:
 				
 				# Mark the process as completed
-				process.set_end_t(t)
+				current_process.set_end_t(t)
 				completed_processes.append(current_process)
 				print("time {}ms: Process {} terminated {}".format(t,current_process,format_queue(ready_queue)))
 				
@@ -151,7 +146,9 @@ def srt(processes_list):
 					heapq.heappush(ready_queue,[(process.get_cpu_t(),str(process)),process])
 					context_switch = True
 					print("time {}ms: Process {} arrived and added to ready queue {}".format(t,process,format_queue(ready_queue)))
-		
+
+		for process in ready_queue:
+			process[1].increase_wait_time()
 		# Start a process if the CPU is open
 		if ready == True and len(ready_queue) > 0:
 			ready = False
@@ -186,15 +183,15 @@ def srt(processes_list):
 			context_switch = False
 		else:
 			t+=1
-		# Increase the wait time of all processes in the queue
-		increase_wait_time(ready_queue)
+
 	print("time {}ms: Simulator ended for SRT".format(t))
 
 	# Calulate stats
-	for process in processes_list:
-		avg_wait+=process.get_wait_time()
-		avg_turn+=(process.get_end_t() - process.get_arrival_t())
-	return [float(avg_burst)/(total_bursts),float(avg_wait)/total_bursts,float(avg_turn)/len(process_list),context,preemption] 
+	for process in completed_processes:
+		print(avg_wait)
+		avg_wait+=(process.get_end_t() - process.get_arrival_t() - (context*4) - (preemption * 8))
+		avg_turn+= process.get_end_t() - process.get_arrival_t()
+	return [float(avg_burst)/(total_bursts),float(wait)/len(process_list),float(avg_turn)/len(process_list),context,preemption] 
 
 if __name__ == '__main__':
 	
