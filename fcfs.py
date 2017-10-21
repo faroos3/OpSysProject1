@@ -283,10 +283,10 @@ def rr(process_list):
 	cpu = CPU_Burst()
 	# Calculate some stats we can here 
 	temp = 0 
-	for process in process_list: 
-		avg_cpu += process.get_cpu_t() * process.get_num_bursts()
-		print(avg_cpu)
-	avg_cpu /= len(process_list)
+	# for process in process_list: 
+		# avg_cpu += process.get_cpu_t() * process.get_num_bursts()
+		# print(avg_cpu)
+	# avg_cpu /= len(process_list)
 	# end calculating of some stats. 
 	
 	context_switch = False
@@ -360,7 +360,7 @@ def rr(process_list):
 				##Get the first process on the queue
 				new_process = ready_queue.dequeue()
 				#Context switch
-				context_switch = True
+				# context_switch = True
 				counter += 4
 				cpu.set_cpu(new_process,counter,t_slice)
 
