@@ -186,6 +186,7 @@ def fcfs(process_list):
 
 	###Total wait Time
 	wait_time=0
+	wait_with_context=0
 
 	###Total number of context switches
 	total_context = 0
@@ -213,7 +214,6 @@ def fcfs(process_list):
 					print("time {}ms: Process {} switching out of CPU; will block on I/O until time {}ms {}".format(i,current_process,i_o_t,ready_queue))
 					current_process.set_arrival_t(i_o_t)
 					context_switch = True
-					context+=1
 					i += 4
 				
 			if((processes_complete == len(process_list))):
@@ -246,13 +246,14 @@ def fcfs(process_list):
 
 				#Context switch
 				context_switch = True
+				total_context+= 1
 				i += 4
-				context+=1
 
 				##Put it into the CPU
 				cpu.set_cpu(new_process,i,None)
 
-				wait_time+= i - new_process.get_arrival_t() + 4
+				wait_time+= i - new_process.get_arrival_t()-4
+				wait_with_context+= i - new_process.get_arrival_t()+4
 				print("time {}ms: Process {} started using the CPU {}".format(i,new_process,ready_queue))
 				##Decriment number of bursts remaining for process
 				new_process.burst_complete()
@@ -264,11 +265,11 @@ def fcfs(process_list):
 		if(context_switch != True):
 			i+=1
 		else:
-			total_context+= 1
 			context_switch = False
 
 
 	avg_wait_time = wait_time/total_num_bursts
-	avg_turnaround_time = avg_wait_time + avg_burst
+	avg_wait_with_context = wait_with_context/total_num_bursts
+	avg_turnaround_time = avg_wait_with_context + avg_burst
 
 	return [float(avg_burst),float(avg_wait_time),float(avg_turnaround_time),float(total_context),0.0]
