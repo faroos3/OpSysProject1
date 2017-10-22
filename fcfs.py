@@ -82,8 +82,8 @@ class Process(object):
 	def get_io_t(self):
 		return self.io_t
 	
-	def increase_wait_time(self): 
-		self.wait_time += 1
+	def increase_wait_time(self, amount):
+		self.wait_time += amount
 
 	def set_process_end_t(self,t):
 		self.process_end_t = t
@@ -91,7 +91,7 @@ class Process(object):
 	def get_process_end_t(self):
 		return self.process_end_t
 		
-	def get_wait_time(self):
+	def get_wait_t(self):
 		return self.wait_time
 
 	# Decrease number of bursts by 1

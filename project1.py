@@ -9,7 +9,7 @@ The three algorithms implemented are First Come First Serve, Shortest Remaining 
 import sys 
 from fcfs import *
 from rr import *
-from srt import srt
+from srt import *
 
 # This function will get all the arguments in the filename. 
 def get_instructions(file_name):
@@ -29,15 +29,6 @@ def get_instructions(file_name):
 							split_line[i] = int(split_line[i])
 					process_list.append(split_line)
 	return process_list
-
-# Format the stats of each algorithm
-def print_stats(stats, algorithm):
-	print("Algorithm",algorithm)
-	print("-- average CPU burst time: {:.2f} ms".format(stats[0]))
-	print("-- average wait time: {:.2f} ms".format(stats[1]))
-	print("-- average turnaround time: {:.2f} ms".format(stats[2]))
-	print("-- total number of context switches: {}".format(stats[3]))
-	print("-- total number of preemptions: {}".format(stats[4]))
 
 if __name__ == '__main__':
 	 
@@ -85,7 +76,4 @@ if __name__ == '__main__':
 			f.write("-- average turnaround time: {:.2f}".format(rr[2])+ " ms\n")
 			f.write("-- total number of context switches: {}".format(int(rr[3])) + "\n")
 			f.write("-- total number of preemptions: {}".format(int(rr[4])) + "\n")
-		# print(rr)
-		# print_stats(fcfs(process_list), "FCFS")
-		# print_stats(srt,"SRT")
 		
