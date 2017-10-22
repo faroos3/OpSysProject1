@@ -35,96 +35,7 @@ class Queue(object):
 				meh += i.get_process_id() + ' '
 			meh = meh.rstrip()
 			meh += ']'
-			return meh
-
-#Contains info for each process
-class Process(object):
-
-	def __init__(self,process_id,arrival_t,cpu_t,num_bursts,io_t):
-		self.process_id = process_id;
-		self.arrival_t = arrival_t
-		# Initial arrival time
-		self.arrival_t0 = arrival_t
-		self.end_t = 0
-		self.cpu_t = cpu_t
-		# Initial cpu burst time
-		self.cpu_t0 = cpu_t
-		self.num_bursts = num_bursts
-		self.io_t = io_t
-		self.process_end_t = -1
-		self.wait_time = 0
-		self.added = False
-		self.final_end_time = 0
-	def set_final_end_time(self, time):
-		self.final_end_time = time
-	def get_final_end_time(self):
-		return self.final_end_time
-
-	def get_process_id(self):
-		return self.process_id
-
-	def get_arrival_t(self):
-		return self.arrival_t
-
-	def get_arrival_t0(self):
-		return self.arrival_t0
-
-	def get_end_t(self):
-		return self.end_t
-
-	def set_arrival_t(self, t):
-		self.arrival_t = t
-
-	def set_end_t(self, t):
-		self.end_t = t
-
-	def get_cpu_t(self):
-		return self.cpu_t
-
-	def get_num_bursts(self):
-		return self.num_bursts
-
-	def get_io_t(self):
-		return self.io_t
-	
-	def increase_wait_time(self): 
-		self.wait_time +=1 
-
-	def set_process_end_t(self,t):
-		self.process_end_t = t
-
-	def get_process_end_t(self):
-		return self.process_end_t
-		
-	def get_wait_time(self):
-		return self.wait_time
-
-	# Decrease number of bursts by 1
-	def burst_complete(self):
-		self.num_bursts -= 1
-
-	def set_cpu_t(self,t):
-		self.cpu_t = t
-
-	def get_cpu_t0(self):
-		return self.cpu_t0
-
-	def wasAdded(self):
-		return self.added
-
-	def setAdded(self,boolean):
-		self.added = boolean
-
-	# Compare processes based on CPU burst time
-	def __lt__(self, other):
-		return self.get_process_id() < other.get_process_id()
-
-	def __str__(self):
-		return self.process_id
-
-	def __repr__(self):
-		return str(self)
-		
+			return meh		
 
 #Keeps track of processes in CPU burst
 class CPU_Burst(object):
@@ -309,7 +220,7 @@ def rr(process_list):
 		possible_turn = process_list[itr].get_final_end_time() - process_list[itr].get_arrival_t0()
 		possible_turn -= original_bursts[itr] * process_list[itr].get_io_t()
 		avg_turn += possible_turn
-		avg_wait += process_list[itr].get_wait_time()
+		avg_wait += process_list[itr].get_wait_t()
 	avg_wait /= total_bursts
 	#avg_wait = wait_time/total_bursts
 	avg_wait_context = wait_with_context/total_bursts

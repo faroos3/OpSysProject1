@@ -43,10 +43,12 @@ class Process(object):
 	def __init__(self,process_id,arrival_t,cpu_t,num_bursts,io_t):
 		self.process_id = process_id;
 		self.arrival_t = arrival_t
+		
 		# Initial arrival time
 		self.arrival_t0 = arrival_t
 		self.end_t = 0
 		self.cpu_t = cpu_t
+		
 		# Initial cpu burst time
 		self.cpu_t0 = cpu_t
 		self.num_bursts = num_bursts
@@ -54,6 +56,12 @@ class Process(object):
 		self.process_end_t = -1
 		self.wait_time = 0
 		self.added = False
+		self.final_end_time = 0
+
+	def set_final_end_time(self, time):
+		self.final_end_time = time
+	def get_final_end_time(self):
+		return self.final_end_time
 
 	def get_process_id(self):
 		return self.process_id
@@ -82,7 +90,11 @@ class Process(object):
 	def get_io_t(self):
 		return self.io_t
 	
-	def increase_wait_time(self, amount):
+	def increase_wait_time(self):
+		self.wait_time += 1
+
+	# Made for Aaron's SRT algo
+	def increase_wait_t(self, amount):
 		self.wait_time += amount
 
 	def set_process_end_t(self,t):

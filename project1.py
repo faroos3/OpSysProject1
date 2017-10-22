@@ -8,8 +8,8 @@ The three algorithms implemented are First Come First Serve, Shortest Remaining 
 
 import sys 
 from fcfs import *
-from rr import *
-from srt import *
+from rr import rr
+from srt import srt
 
 # This function will get all the arguments in the filename. 
 def get_instructions(file_name):

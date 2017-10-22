@@ -17,7 +17,7 @@ def format_queue(queue):
 
 def increase_wait(queue, time):
 	for process in queue:
-		process[1].increase_wait_time(time)
+		process[1].increase_wait_t(time)
 
 def srt(processes_list):	
 	processes_list.sort(key=lambda x: x.get_process_id())
@@ -66,7 +66,7 @@ def srt(processes_list):
 				current_process.set_end_t(t)
 				completed_processes.append(current_process)
 				if len(ready_queue) == 2:
-						increase_wait_time(ready_queue,4)
+						increase_wait_t(ready_queue,4)
 				print("time {}ms: Process {} terminated {}".format(t,current_process,format_queue(ready_queue)))
 				
 			# If the queue is empty we won't need to account for the 2nf half of the context switch
@@ -102,9 +102,9 @@ def srt(processes_list):
 					if process.get_cpu_t() < (burst_end_time - t):
 						replace = True
 						print("time {}ms: Process {} completed I/O and will preempt {} {}".format(t,process,current_process,format_queue(ready_queue)))
-						process.increase_wait_time(4)
+						process.increase_wait_t(4)
 						if (len(ready_queue) == 0): # If the queue is empty, the current process won't we taken off after we add it back
-							current_process.increase_wait_time(4)
+							current_process.increase_wait_t(4)
 						heapq.heappush(ready_queue,[(burst_end_time-t,str(current_process)), current_process])
 						heapq.heappush(ready_queue,[(process.get_cpu_t(),str(process)), process])
 						preemption+=1
@@ -117,7 +117,7 @@ def srt(processes_list):
 					else:
 						context_switch = True
 						# if (len(ready_queue) == 0):
-							# process.increase_wait_time(4)
+							# process.increase_wait_t(4)
 						heapq.heappush(ready_queue,[(process.get_cpu_t(),str(process)), process])
 						print("time {}ms: Process {} completed I/O; added to ready queue {}".format(t,process,format_queue(ready_queue)))
 
@@ -138,11 +138,11 @@ def srt(processes_list):
 					replace = True
 
 					# Add the current process back to the queue with it's remaining time
-					current_process.increase_wait_time(8)
+					current_process.increase_wait_t(8)
 					heapq.heappush(ready_queue,[(burst_end_time - t,str(current_process)), current_process]) 
 
 					# Add the process to the queue if there is no preemption
-					process.increase_wait_time(4)
+					process.increase_wait_t(4)
 					heapq.heappush(ready_queue,[(process.get_cpu_t(),str(process)),process])
 
 					# Set the process as the new current process
@@ -158,7 +158,7 @@ def srt(processes_list):
 
 					# Add the process to the queue if there is no preemption
 					# if (len(ready_queue) == 0): # improves case 6
-						# process.increase_wait_time(4)
+						# process.increase_wait_t(4)
 					heapq.heappush(ready_queue,[(process.get_cpu_t(),str(process)),process])
 					context_switch = True
 					print("time {}ms: Process {} arrived and added to ready queue {}".format(t,process,format_queue(ready_queue)))
@@ -216,7 +216,7 @@ def srt(processes_list):
 	# Wait time for a single process = total time process spends in the ready queue
 	for process in sorted(completed_processes):
 		avg_wait+=process.get_wait_t()
-		avg_turn+= process.get_end_t() - process.get_arrival_t() - (process.get_io_t() * ())
+		# avg_turn+= process.get_end_t() - process.get_arrival_t() - (process.get_io_t() * ())
 	return [float(avg_burst)/total_bursts,float(avg_wait)/total_bursts,float(avg_turn)/total_bursts,int(context),preemption] 
 
 # if __name__ == '__main__':
