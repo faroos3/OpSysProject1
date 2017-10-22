@@ -191,7 +191,7 @@ def srt(processes_list):
 		print(avg_wait)
 		avg_wait+=(process.get_end_t() - process.get_arrival_t() - (context*4) - (preemption * 8))
 		avg_turn+= process.get_end_t() - process.get_arrival_t()
-	return [float(avg_burst)/(total_bursts),float(wait)/len(process_list),float(avg_turn)/len(process_list),context,preemption] 
+	return [float(avg_burst)/(total_bursts),float(wait)/len(processes_list),float(avg_turn)/len(processes_list),context,preemption] 
 
 if __name__ == '__main__':
 	
