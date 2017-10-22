@@ -185,6 +185,7 @@ def rr(process_list):
 				new_process = ready_queue.dequeue()
 				#Context switch
 				context_switch = True
+				num_cs += 1
 				counter += 4
 				wait_time+= counter - new_process.get_arrival_t()-4
 				wait_with_context+= counter - new_process.get_arrival_t()+4
@@ -204,23 +205,23 @@ def rr(process_list):
 			counter+=1 
 		else:
 			context_switch = False
-			num_cs +=1 
+			# num_cs +=1 
 		i+=1
 
 		
 		# loops to help calculate stats 
-		for itr in range(len(process_list)):
-			if counter >= process_list[itr].get_arrival_t0(): # meaning it has arrived 
-				if process_list[itr] != current_process: # self-explanatory
-					if process_list[itr].get_arrival_t() != process_list[itr].get_arrival_t0() and counter > process_list[itr].get_arrival_t():
-						# I think this last if statement is the case for checking if it's not in IO time? 
-						process_list[itr].increase_wait_time()
+		# for itr in range(len(process_list)):
+			# if counter >= process_list[itr].get_arrival_t0(): # meaning it has arrived 
+				# if process_list[itr] != current_process: # self-explanatory
+					# if process_list[itr].get_arrival_t() != process_list[itr].get_arrival_t0() and counter > process_list[itr].get_arrival_t():
+						# # I think this last if statement is the case for checking if it's not in IO time? 
+						# process_list[itr].increase_wait_time()
 	# area to calculate and return stats 	
 	for itr in range(len(process_list)):
 		possible_turn = process_list[itr].get_final_end_time() - process_list[itr].get_arrival_t0()
 		possible_turn -= original_bursts[itr] * process_list[itr].get_io_t()
 		avg_turn += possible_turn
-		avg_wait += process_list[itr].get_wait_t()
+		avg_wait += process_list[itr].get_final_end_time() - process_list[itr].get_arrival_t0() - (num_cs * 4) - (preemption * 8)
 	avg_wait /= total_bursts
 	#avg_wait = wait_time/total_bursts
 	avg_wait_context = wait_with_context/total_bursts
